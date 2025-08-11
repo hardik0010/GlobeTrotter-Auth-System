@@ -1,12 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
-import { 
-  Calendar, 
-  MapPin, 
-  Search, 
-  Plus, 
-  X, 
+import {
+  Calendar,
+  MapPin,
+  Search,
+  Plus,
+  X,
   Star,
   Clock,
   Users,
@@ -30,7 +30,7 @@ import toast from 'react-hot-toast';
 
 const PlanTripPage = () => {
   const navigate = useNavigate();
-  
+
   // Form state
   const [tripData, setTripData] = useState({
     startDate: '',
@@ -75,28 +75,28 @@ const PlanTripPage = () => {
   const validateDates = () => {
     const today = new Date();
     today.setHours(0, 0, 0, 0);
-    
+
     const startDate = new Date(tripData.startDate);
     const endDate = new Date(tripData.endDate);
-    
+
     if (startDate < today) {
       toast.error('Start date cannot be in the past');
       return false;
     }
-    
+
     if (endDate <= startDate) {
       toast.error('End date must be after start date');
       return false;
     }
-    
+
     const diffTime = Math.abs(endDate - startDate);
     const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    
+
     if (diffDays > 30) {
       toast.error('Trip duration cannot exceed 30 days');
       return false;
     }
-    
+
     return true;
   };
 
@@ -106,31 +106,31 @@ const PlanTripPage = () => {
       toast.error('Please enter a start place');
       return false;
     }
-    
+
     if (!tripData.endPlace.trim()) {
       toast.error('Please enter a destination');
       return false;
     }
-    
+
     if (!tripData.startDate) {
       toast.error('Please select a start date');
       return false;
     }
-    
+
     if (!tripData.endDate) {
       toast.error('Please select an end date');
       return false;
     }
-    
+
     if (!validateDates()) {
       return false;
     }
-    
+
     if (tripData.travelers < 1 || tripData.travelers > 10) {
       toast.error('Number of travelers must be between 1 and 10');
       return false;
     }
-    
+
     return true;
   };
 
@@ -140,7 +140,7 @@ const PlanTripPage = () => {
       ...prev,
       [field]: value
     }));
-    
+
     // Clear suggestions when user starts typing
     if (field === 'startPlace') {
       setShowStartSuggestions(false);
@@ -158,23 +158,14 @@ const PlanTripPage = () => {
     }
 
     try {
-      const response = await axios.get('/api/trips/search-places', {
-        params: { query }
-      });
-
-      if (response.data.places && response.data.places.length > 0) {
-        setSuggestions(response.data.places);
-        setShowSuggestions(true);
-      } else {
-        setSuggestions([]);
-        setShowSuggestions(false);
-      }
-    } catch (error) {
-      console.error('Error searching places:', error);
-      setSuggestions([]);
-      setShowSuggestions(false);
-    }
-  };
+      // Check if Google Places API is available
+      if (window.google && window.google.maps && window.google.maps.places) {
+        const service = new window.google.maps.places.AutocompleteService();
+        service.getPlacePredictions({
+          input: query,
+          types: ['(cities)']
+        }, (predictions, status) => {
+          if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
             const places = predictions.map(prediction => ({
               place_id: prediction.place_id,
               description: prediction.description,
@@ -237,7 +228,7 @@ const PlanTripPage = () => {
       ...prev,
       stops: prev.stops.map((stop, i) => i === index ? value : stop)
     }));
-    
+
     // Search for suggestions
     if (value.length >= 2) {
       searchPlaces(value, setStopSuggestions, setShowStopSuggestions);
@@ -262,7 +253,7 @@ const PlanTripPage = () => {
   // Get transport options
   const getTransportOptions = async () => {
     if (!tripData.startPlace || !tripData.endPlace || !tripData.startDate) return;
-    
+
     try {
       const response = await axios.get('/api/trips/transport-options', {
         params: {
@@ -281,7 +272,7 @@ const PlanTripPage = () => {
   // Get hotel options
   const getHotelOptions = async () => {
     if (!tripData.startPlace || !tripData.startDate || !tripData.endDate) return;
-    
+
     try {
       const response = await axios.get('/api/trips/hotel-options', {
         params: {
@@ -301,7 +292,7 @@ const PlanTripPage = () => {
   // Get weather data
   const getWeatherData = async () => {
     if (!tripData.startPlace) return;
-    
+
     try {
       const response = await axios.get(`/api/trips/weather/${encodeURIComponent(tripData.startPlace)}`);
       setWeatherData(response.data);
@@ -313,7 +304,7 @@ const PlanTripPage = () => {
   // Get travel tips
   const getTravelTips = async () => {
     if (!tripData.endPlace) return;
-    
+
     try {
       const response = await axios.get(`/api/trips/travel-tips/${encodeURIComponent(tripData.endPlace)}`);
       setTravelTips(response.data);
@@ -348,7 +339,7 @@ const PlanTripPage = () => {
         getWeatherData(),
         getTravelTips()
       ]);
-      
+
       const result = packagesResponse.data;
       setSearchResults(result.packages);
       setRouteInfo(result.routeInfo);
@@ -356,7 +347,7 @@ const PlanTripPage = () => {
       setPricing(result.pricing);
       setTripSummary(result.tripSummary);
       setShowSuggestions(true);
-      
+
       toast.success(`Found ${result.packages.length} packages for your trip!`);
     } catch (error) {
       console.error('Error searching packages:', error);
@@ -378,16 +369,16 @@ const PlanTripPage = () => {
       toast.error('Please select at least one package');
       return;
     }
-    
-    navigate('/itinerary', { 
-      state: { 
-        tripData, 
+
+    navigate('/itinerary', {
+      state: {
+        tripData,
         selectedPackages,
         routeInfo,
         totalAttractions,
         pricing,
         tripSummary
-      } 
+      }
     });
   };
 
@@ -402,12 +393,12 @@ const PlanTripPage = () => {
         default: return <Car className="h-4 w-4" />;
       }
     }
-    
+
     // If transport is an object (from real-time API)
     if (transport.airline) return <Plane className="h-4 w-4" />;
     if (transport.number) return <Train className="h-4 w-4" />;
     if (transport.type) return <Bus className="h-4 w-4" />;
-    
+
     return <Car className="h-4 w-4" />;
   };
 
@@ -424,7 +415,7 @@ const PlanTripPage = () => {
   // Get transport details
   const getTransportDetails = (transport) => {
     if (typeof transport === 'string') return transport;
-    
+
     if (transport.airline) {
       return `${transport.airline} - ${transport.duration}`;
     }
@@ -434,7 +425,7 @@ const PlanTripPage = () => {
     if (transport.type) {
       return `${transport.name} - ${transport.duration}`;
     }
-    
+
     return 'Transport';
   };
 
@@ -448,7 +439,7 @@ const PlanTripPage = () => {
         setShowEndSuggestions(false);
       }
       if (stopInputRefs.current.length > 0) {
-        const isClickInsideStop = stopInputRefs.current.some(ref => 
+        const isClickInsideStop = stopInputRefs.current.some(ref =>
           ref && ref.contains(event.target)
         );
         if (!isClickInsideStop) {
@@ -479,41 +470,39 @@ const PlanTripPage = () => {
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow-md p-6 mb-8">
               <h2 className="text-xl font-semibold text-gray-900 mb-6">Trip Details</h2>
-              
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                {/* Start Date */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    Start Date
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="date"
-                      value={tripData.startDate}
-                      onChange={(e) => handleInputChange('startDate', e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      min={new Date().toISOString().split('T')[0]}
-                    />
-                    <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  </div>
-                </div>
 
-                {/* End Date */}
-                <div>
-                  <label className="block text-sm font-medium text-gray-700 mb-2">
-                    End Date
-                  </label>
-                  <div className="relative">
-                    <input
-                      type="date"
-                      value={tripData.endDate}
-                      onChange={(e) => handleInputChange('endDate', e.target.value)}
-                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      min={tripData.startDate || new Date().toISOString().split('T')[0]}
-                    />
-                    <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
-                  </div>
-                </div>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                 {/* Start Date */}
+                 <div>
+                   <label className="block text-sm font-medium text-gray-700 mb-2">
+                     Start Date
+                   </label>
+                   <div className="relative">
+                     <input
+                       type="date"
+                       value={tripData.startDate}
+                       onChange={(e) => handleInputChange('startDate', e.target.value)}
+                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                       min={new Date().toISOString().split('T')[0]}
+                     />
+                   </div>
+                 </div>
+
+                 {/* End Date */}
+                 <div>
+                   <label className="block text-sm font-medium text-gray-700 mb-2">
+                     End Date
+                   </label>
+                   <div className="relative">
+                     <input
+                       type="date"
+                       value={tripData.endDate}
+                       onChange={(e) => handleInputChange('endDate', e.target.value)}
+                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                       min={tripData.startDate || new Date().toISOString().split('T')[0]}
+                     />
+                   </div>
+                 </div>
 
                 {/* Start Place */}
                 <div className="relative">
@@ -539,7 +528,7 @@ const PlanTripPage = () => {
                     />
                     <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   </div>
-                  
+
                   {/* Start Place Suggestions */}
                   {showStartSuggestions && startSuggestions.length > 0 && (
                     <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
@@ -581,7 +570,7 @@ const PlanTripPage = () => {
                     />
                     <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   </div>
-                  
+
                   {/* End Place Suggestions */}
                   {showEndSuggestions && endSuggestions.length > 0 && (
                     <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
@@ -615,7 +604,7 @@ const PlanTripPage = () => {
                     Add Stop
                   </button>
                 </div>
-                
+
                 {tripData.stops.map((stop, index) => (
                   <div key={index} className="relative mb-3">
                     <div className="flex items-center space-x-3">
@@ -638,7 +627,7 @@ const PlanTripPage = () => {
                         <X className="h-5 w-5" />
                       </button>
                     </div>
-                    
+
                     {/* Stop Suggestions */}
                     {showStopSuggestions && activeStopIndex === index && stopSuggestions.length > 0 && (
                       <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
@@ -853,7 +842,7 @@ const PlanTripPage = () => {
                                   </span>
                                 )}
                               </div>
-                              
+
                               {/* Transport Information */}
                               {pkg.transport && (
                                 <div className="mb-3 p-3 bg-gray-50 rounded-lg">
@@ -881,7 +870,7 @@ const PlanTripPage = () => {
                                   )}
                                 </div>
                               )}
-                              
+
                               {/* Pricing Breakdown */}
                               {pkg.pricing && (
                                 <div className="mb-3 p-3 bg-gray-50 rounded-lg">
@@ -929,7 +918,7 @@ const PlanTripPage = () => {
                                   </span>
                                 ))}
                               </div>
-                              
+
                               {pkg.attractions && pkg.attractions.length > 0 && (
                                 <div className="mb-3">
                                   <p className="text-sm text-gray-600 mb-1">Top Attractions:</p>
