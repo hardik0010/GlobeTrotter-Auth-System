@@ -4,28 +4,26 @@ A comprehensive travel planning application with real-time data integration, int
 
 ## 🚀 New Features & Improvements
 
-### Real-Time Data Integration
-- **Google Places API**: Enhanced place search with autocomplete
-- **Google Maps Directions**: Real-time route calculation and optimization
-- **Google Places Nearby Search**: Live attraction discovery
-- **Amadeus Flight API**: Real-time flight pricing and availability
-- **RapidAPI Hotels**: Live hotel pricing and availability
-- **Weather Integration**: Real-time weather forecasts for travel planning
+### AI-Powered Itinerary Generation
+- **Gemini AI**: Intelligent day-by-day itinerary generation
+- **Foursquare Places API**: Rich activity data with photos and ratings
+- **Smart Fallbacks**: Mock itineraries when APIs are unavailable
+- **Real-time Enrichment**: Activity photos, ratings, and location data
 - **Caching System**: Optimized API responses with 5-minute cache
 
 ### Enhanced Trip Planning
-- **Multi-Modal Transportation**: Flights, trains, buses with real pricing
-- **Dynamic Pricing**: Real-time cost calculations based on distance, dates, and demand
-- **Smart Route Optimization**: Google Directions API integration
+- **AI-Generated Itineraries**: Personalized day-by-day travel plans
+- **Rich Activity Data**: Photos, ratings, and detailed descriptions
+- **Smart Route Planning**: Estimated distances and travel times
 - **Attraction Discovery**: Automatic tourist attraction recommendations
 - **Weather-Aware Planning**: Weather forecasts for better trip timing
 - **Travel Tips**: Destination-specific recommendations and advice
 
 ### Improved User Experience
-- **Real-Time Search**: Instant place suggestions with Google Places
-- **Interactive Maps**: Route visualization and distance calculations
-- **Comprehensive Pricing**: Detailed cost breakdowns for all trip components
-- **Multiple Package Types**: Budget, Comfort, and Luxury options
+- **Real-Time Search**: Instant place suggestions with backend API
+- **Interactive Itineraries**: Day-by-day travel plans with rich visuals
+- **Comprehensive Activity Data**: Photos, ratings, and cost information
+- **AI-Powered Recommendations**: Intelligent activity suggestions
 - **Responsive Design**: Mobile-friendly interface with modern UI
 - **Loading States**: Better user feedback during API calls
 
@@ -35,9 +33,10 @@ A comprehensive travel planning application with real-time data integration, int
 - **Node.js** with Express.js
 - **MongoDB** with Mongoose
 - **JWT Authentication**
-- **Google Maps API** integration
-- **Amadeus Flight API** integration
-- **RapidAPI Hotels** integration
+- **Gemini AI API** integration
+- **Foursquare Places API** integration
+- **Amadeus Flight API** integration (optional)
+- **RapidAPI Hotels** integration (optional)
 - **Node-Cache** for performance optimization
 - **Axios** for HTTP requests
 
@@ -53,7 +52,8 @@ A comprehensive travel planning application with real-time data integration, int
 
 - Node.js (v14 or higher)
 - MongoDB Atlas account
-- Google Maps API key
+- Gemini AI API key
+- Foursquare Places API key
 - Amadeus API credentials (optional)
 - RapidAPI key (optional)
 
@@ -83,8 +83,9 @@ PORT=5000
 # JWT Configuration
 JWT_SECRET=your_jwt_secret
 
-# Google Maps API
-GOOGLE_MAPS_API_KEY=your_google_maps_api_key
+# AI and Places APIs
+GEMINI_API_KEY=your_gemini_api_key
+FOURSQUARE_API_KEY=your_foursquare_api_key
 
 # Optional: Real-time APIs
 RAPIDAPI_KEY=your_rapidapi_key

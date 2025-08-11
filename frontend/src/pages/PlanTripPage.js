@@ -45,6 +45,8 @@ const PlanTripPage = () => {
 
   // UI state
   const [isLoading, setIsLoading] = useState(false);
+  const [itinerary, setItinerary] = useState([]);
+  const [showItinerary, setShowItinerary] = useState(false);
   const [searchResults, setSearchResults] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedPackages, setSelectedPackages] = useState([]);
@@ -158,34 +160,10 @@ const PlanTripPage = () => {
     }
 
     try {
-      // Check if Google Places API is available
-      if (window.google && window.google.maps && window.google.maps.places) {
-        const service = new window.google.maps.places.AutocompleteService();
-        service.getPlacePredictions({
-          input: query,
-          types: ['(cities)']
-        }, (predictions, status) => {
-          if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
-            const places = predictions.map(prediction => ({
-              place_id: prediction.place_id,
-              description: prediction.description,
-              main_text: prediction.structured_formatting?.main_text || '',
-              secondary_text: prediction.structured_formatting?.secondary_text || '',
-              types: prediction.types || []
-            }));
-            setSuggestions(places);
-            setShowSuggestions(true);
-          } else {
-            setSuggestions([]);
-            setShowSuggestions(false);
-          }
-        });
-      } else {
-        // Fallback to backend API if Google Places is not loaded
-        const response = await axios.get(`/api/trips/search-places?query=${encodeURIComponent(query)}`);
-        setSuggestions(response.data.places);
-        setShowSuggestions(true);
-      }
+      // Use backend API for place search
+      const response = await axios.get(`/api/trips/search-places?query=${encodeURIComponent(query)}`);
+      setSuggestions(response.data.places);
+      setShowSuggestions(true);
     } catch (error) {
       console.error('Error searching places:', error);
       setSuggestions([]);
@@ -313,8 +291,8 @@ const PlanTripPage = () => {
     }
   };
 
-  // Search for packages
-  const searchPackages = async () => {
+  // Generate itinerary
+  const generateItinerary = async () => {
     if (!tripData.startPlace || !tripData.endPlace || !tripData.startDate || !tripData.endDate) {
       toast.error('Please fill in all required fields');
       return;
@@ -322,36 +300,23 @@ const PlanTripPage = () => {
 
     setIsLoading(true);
     try {
-      // Get all data in parallel
-      const [packagesResponse, transportResponse, hotelResponse, weatherResponse, tipsResponse] = await Promise.all([
-        axios.post('/api/trips/generate-packages', {
-          startPlace: tripData.startPlace,
-          endPlace: tripData.endPlace,
-          stops: tripData.stops.filter(stop => stop.trim() !== ''),
-          startDate: tripData.startDate,
-          endDate: tripData.endDate,
-          travelers: tripData.travelers,
-          budget: tripData.budget,
-          tripType: tripData.tripType
-        }),
-        getTransportOptions(),
-        getHotelOptions(),
-        getWeatherData(),
-        getTravelTips()
-      ]);
+      // Generate itinerary using Gemini + Foursquare
+      const itineraryResponse = await axios.post('/api/itinerary/generate', {
+        startPlace: tripData.startPlace,
+        endPlace: tripData.endPlace,
+        stops: tripData.stops.filter(stop => stop.trim() !== ''),
+        startDate: tripData.startDate,
+        endDate: tripData.endDate
+      });
 
-      const result = packagesResponse.data;
-      setSearchResults(result.packages);
-      setRouteInfo(result.routeInfo);
-      setTotalAttractions(result.totalAttractions);
-      setPricing(result.pricing);
-      setTripSummary(result.tripSummary);
-      setShowSuggestions(true);
+      const result = itineraryResponse.data;
+      setItinerary(result.itinerary);
+      setShowItinerary(true);
 
-      toast.success(`Found ${result.packages.length} packages for your trip!`);
+      toast.success(`Generated ${result.itinerary.length} day itinerary for your trip!`);
     } catch (error) {
-      console.error('Error searching packages:', error);
-      toast.error('Failed to search packages');
+      console.error('Error generating itinerary:', error);
+      toast.error('Failed to generate itinerary');
     } finally {
       setIsLoading(false);
     }
@@ -700,19 +665,19 @@ const PlanTripPage = () => {
               {/* Search Button */}
               <div className="mt-8">
                 <button
-                  onClick={searchPackages}
+                  onClick={generateItinerary}
                   disabled={isLoading}
                   className="w-full bg-blue-600 text-white py-3 px-6 rounded-lg font-medium hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 transition-all duration-200 transform hover:scale-[1.02] disabled:opacity-50 disabled:cursor-not-allowed disabled:transform-none flex items-center justify-center"
                 >
                   {isLoading ? (
                     <>
                       <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white mr-2"></div>
-                      Searching...
+                      Generating...
                     </>
                   ) : (
                     <>
                       <Search className="h-5 w-5 mr-2" />
-                      Search Packages
+                      Generate Itinerary
                     </>
                   )}
                 </button>
@@ -964,6 +929,79 @@ const PlanTripPage = () => {
                             </div>
                           </div>
                         </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Generated Itinerary */}
+            {showItinerary && itinerary.length > 0 && (
+              <div className="bg-white rounded-lg shadow-md p-6 mb-8">
+                <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
+                  <Map className="h-6 w-6 mr-2" />
+                  Your Generated Itinerary
+                </h2>
+                <div className="space-y-6">
+                  {itinerary.map((day, dayIndex) => (
+                    <div key={dayIndex} className="border border-gray-200 rounded-lg p-4">
+                      <div className="flex items-center justify-between mb-4">
+                        <h3 className="text-lg font-semibold text-gray-900">
+                          Day {day.day}: {day.city}
+                        </h3>
+                        {day.date && (
+                          <span className="text-sm text-gray-500">
+                            {new Date(day.date).toLocaleDateString('en-US', { 
+                              weekday: 'long', 
+                              year: 'numeric', 
+                              month: 'long', 
+                              day: 'numeric' 
+                            })}
+                          </span>
+                        )}
+                      </div>
+                      <div className="space-y-4">
+                        {day.activities.map((activity, activityIndex) => (
+                          <div key={activityIndex} className="flex items-start space-x-4 p-3 bg-gray-50 rounded-lg">
+                            {activity.imageUrl && (
+                              <img 
+                                src={activity.imageUrl} 
+                                alt={activity.name}
+                                className="w-16 h-16 object-cover rounded-lg"
+                                onError={(e) => {
+                                  e.target.style.display = 'none';
+                                }}
+                              />
+                            )}
+                            <div className="flex-1">
+                              <div className="flex items-center justify-between mb-2">
+                                <h4 className="font-medium text-gray-900">{activity.name}</h4>
+                                {activity.rating && (
+                                  <div className="flex items-center">
+                                    <span className="text-yellow-500">★</span>
+                                    <span className="text-sm text-gray-600 ml-1">{activity.rating}</span>
+                                  </div>
+                                )}
+                              </div>
+                              {activity.time && (
+                                <p className="text-sm text-gray-600 mb-1">
+                                  <Clock className="h-3 w-3 inline mr-1" />
+                                  {activity.time}
+                                </p>
+                              )}
+                              {activity.description && (
+                                <p className="text-sm text-gray-700 mb-2">{activity.description}</p>
+                              )}
+                              {activity.cost && (
+                                <p className="text-sm font-medium text-green-600">
+                                  <DollarSign className="h-3 w-3 inline mr-1" />
+                                  {activity.cost}
+                                </p>
+                              )}
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   ))}

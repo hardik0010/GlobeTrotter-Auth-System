@@ -4,10 +4,7 @@ const axios = require('axios');
 const travelService = require('../utils/travelService');
 require('dotenv').config({ path: './config.env' });
 
-// Google Maps API configuration
-const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
-
-// Helper function to get estimated directions when Google Maps API fails
+// Helper function to get estimated directions
 function getEstimatedDirections(origin, destination, waypoints) {
   const cityDistances = {
     'Mumbai': { 'Delhi': 1400, 'Bangalore': 1000, 'Chennai': 1300, 'Kolkata': 2000 },
@@ -55,36 +52,7 @@ router.get('/search-places', async (req, res) => {
       return res.json({ places: [] });
     }
 
-    try {
-      // Try Google Places API first
-      if (GOOGLE_MAPS_API_KEY) {
-        const response = await axios.get(
-          `https://maps.googleapis.com/maps/api/place/autocomplete/json`,
-          {
-            params: {
-              input: query,
-              key: GOOGLE_MAPS_API_KEY,
-              types: 'geocode',
-              components: 'country:in',
-              language: 'en'
-            }
-          }
-        );
-
-        if (response.data.predictions && response.data.predictions.length > 0) {
-          const places = response.data.predictions.map(prediction => ({
-            place_id: prediction.place_id,
-            description: prediction.description,
-            main_text: prediction.structured_formatting?.main_text || '',
-            secondary_text: prediction.structured_formatting?.secondary_text || '',
-            types: prediction.types || []
-          }));
-          return res.json({ places });
-        }
-      }
-    } catch (error) {
-      console.log('Google Places API failed, using fallback:', error.message);
-    }
+    // Use fallback to popular Indian cities
 
     // Fallback to popular Indian cities
     const popularCities = [
@@ -157,25 +125,14 @@ router.get('/place-details/:placeId', async (req, res) => {
       });
     }
     
-    const response = await axios.get(
-      `https://maps.googleapis.com/maps/api/place/details/json`,
-      {
-        params: {
-          place_id: placeId,
-          key: GOOGLE_MAPS_API_KEY,
-          fields: 'name,formatted_address,geometry,photos,types,place_id'
-        }
-      }
-    );
-
-    const place = response.data.result;
+    // Return basic place information without Google API
     res.json({
-      name: place.name,
-      address: place.formatted_address,
-      location: place.geometry?.location,
-      photos: place.photos?.slice(0, 3) || [],
-      types: place.types,
-      place_id: place.place_id
+      name: placeId,
+      address: placeId,
+      location: null,
+      photos: [],
+      types: ['locality', 'political'],
+      place_id: placeId
     });
   } catch (error) {
     console.error('Error getting place details:', error.response?.data || error.message);
@@ -192,80 +149,12 @@ router.get('/directions', async (req, res) => {
       return res.status(400).json({ message: 'Origin and destination are required' });
     }
 
-    const params = {
-      origin,
-      destination,
-      key: GOOGLE_MAPS_API_KEY,
-      mode: 'driving',
-      units: 'metric',
-      alternatives: 'true'
-    };
-
-    // Handle waypoints properly
-    if (waypoints) {
-      let waypointArray;
-      if (Array.isArray(waypoints)) {
-        waypointArray = waypoints;
-      } else if (typeof waypoints === 'string') {
-        waypointArray = [waypoints];
-      } else {
-        waypointArray = [];
-      }
-      
-      // Filter out empty waypoints and join them
-      const validWaypoints = waypointArray.filter(wp => wp && wp.trim() !== '');
-      if (validWaypoints.length > 0) {
-        params.waypoints = validWaypoints.join('|');
-      }
-    }
-
-    const response = await axios.get(
-      `https://maps.googleapis.com/maps/api/directions/json`,
-      { params }
-    );
-
-    // Check for Google Maps API errors
-    if (response.data.status !== 'OK') {
-      console.error('Google Maps API error:', response.data.status, response.data.error_message);
-      
-      // Provide estimated fallback data based on cities
-      const estimatedData = this.getEstimatedDirections(origin, destination, waypoints);
-      return res.json({
-        ...estimatedData,
-        message: `Google Maps API error: ${response.data.status} - Using estimated data`
-      });
-    }
-
-    if (!response.data.routes || response.data.routes.length === 0) {
-      // Return a fallback response instead of error
-      return res.json({
-        distance: 'Unknown',
-        duration: 'Unknown',
-        totalDistance: 0,
-        totalDuration: 0,
-        steps: [],
-        overview_polyline: null,
-        waypoint_order: [],
-        message: 'Route calculation not available, using estimated data'
-      });
-    }
-
-    const route = response.data.routes[0];
-    const directions = {
-      distance: route.legs[0]?.distance?.text || 'Unknown',
-      duration: route.legs[0]?.duration?.text || 'Unknown',
-      totalDistance: route.legs.reduce((total, leg) => total + (leg.distance?.value || 0), 0),
-      totalDuration: route.legs.reduce((total, leg) => total + (leg.duration?.value || 0), 0),
-      steps: route.legs[0]?.steps?.map(step => ({
-        instruction: step.html_instructions,
-        distance: step.distance?.text,
-        duration: step.duration?.text
-      })) || [],
-      overview_polyline: route.overview_polyline?.points,
-      waypoint_order: route.waypoint_order || []
-    };
-
-    res.json(directions);
+    // Use estimated directions instead of Google Maps API
+    const estimatedData = getEstimatedDirections(origin, destination, waypoints);
+    return res.json({
+      ...estimatedData,
+      message: 'Using estimated route data'
+    });
   } catch (error) {
     console.error('Error getting directions:', error.response?.data || error.message);
     

@@ -8,7 +8,6 @@ const cache = new NodeCache({ stdTTL: 300 });
 // API Configuration
 const RAPIDAPI_KEY = process.env.RAPIDAPI_KEY;
 const RAPIDAPI_HOST = process.env.RAPIDAPI_HOST;
-const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
 const AMADEUS_CLIENT_ID = process.env.AMADEUS_CLIENT_ID;
 const AMADEUS_CLIENT_SECRET = process.env.AMADEUS_CLIENT_SECRET;
 
@@ -316,57 +315,7 @@ class TravelService {
     const cached = cache.get(cacheKey);
     if (cached) return cached;
 
-    try {
-      // First get coordinates for the location
-      const geocodeResponse = await axios.get(
-        `https://maps.googleapis.com/maps/api/geocode/json`,
-        {
-          params: {
-            address: location,
-            key: GOOGLE_MAPS_API_KEY
-          }
-        }
-      );
-
-      if (geocodeResponse.data.results && geocodeResponse.data.results.length > 0) {
-        const coordinates = geocodeResponse.data.results[0].geometry.location;
-        
-        // Get nearby attractions
-        const attractionsResponse = await axios.get(
-          `https://maps.googleapis.com/maps/api/place/nearbysearch/json`,
-          {
-            params: {
-              location: `${coordinates.lat},${coordinates.lng}`,
-              radius: radius,
-              type: 'tourist_attraction',
-              key: GOOGLE_MAPS_API_KEY,
-              rankby: 'rating'
-            }
-          }
-        );
-
-        if (attractionsResponse.data.results) {
-          const attractions = attractionsResponse.data.results.slice(0, 10).map(place => ({
-            id: place.place_id,
-            name: place.name,
-            rating: place.rating || 0,
-            user_ratings_total: place.user_ratings_total || 0,
-            types: place.types || [],
-            vicinity: place.vicinity,
-            photos: place.photos?.slice(0, 3) || [],
-            location: place.geometry?.location,
-            price_level: place.price_level || 0
-          }));
-
-          cache.set(cacheKey, attractions);
-          return attractions;
-        }
-      }
-    } catch (error) {
-      console.error('Error getting attractions:', error.message);
-    }
-
-    // Fallback attractions
+    // Use fallback attractions since Google API is removed
     return this.getFallbackAttractions(location);
   }
 
@@ -494,38 +443,25 @@ class TravelService {
 
   // Calculate optimal route using Google Directions API
   async calculateRoute(origin, destination, stops) {
-    try {
-      const waypoints = stops.filter(stop => stop.trim() !== '');
-      const response = await axios.get(
-        `https://maps.googleapis.com/maps/api/directions/json`,
+    // Return estimated route data since Google API is removed
+    const waypoints = stops.filter(stop => stop.trim() !== '');
+    const estimatedDistance = 1000; // Default 1000 km
+    const estimatedDuration = '10h 0m';
+    
+    return {
+      distance: `${estimatedDistance} km`,
+      duration: estimatedDuration,
+      totalDistance: estimatedDistance * 1000, // Convert to meters
+      totalDuration: 36000, // 10 hours in seconds
+      steps: [
         {
-          params: {
-            origin,
-            destination,
-            waypoints: waypoints.length > 0 ? waypoints.join('|') : undefined,
-            key: GOOGLE_MAPS_API_KEY,
-            mode: 'driving',
-            units: 'metric'
-          }
+          instruction: `Drive from ${origin} to ${destination}`,
+          distance: `${estimatedDistance} km`,
+          duration: estimatedDuration
         }
-      );
-
-      if (response.data.routes && response.data.routes.length > 0) {
-        const route = response.data.routes[0];
-        return {
-          distance: route.legs[0]?.distance?.text || 'Unknown',
-          duration: route.legs[0]?.duration?.text || 'Unknown',
-          totalDistance: route.legs.reduce((total, leg) => total + (leg.distance?.value || 0), 0),
-          totalDuration: route.legs.reduce((total, leg) => total + (leg.duration?.value || 0), 0),
-          steps: route.legs[0]?.steps?.slice(0, 5) || [],
-          overview_polyline: route.overview_polyline?.points
-        };
-      }
-    } catch (error) {
-      console.error('Error calculating route:', error.message);
-    }
-
-    return null;
+      ],
+      overview_polyline: null
+    };
   }
 
   // Generate travel packages
