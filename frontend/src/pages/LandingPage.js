@@ -1,195 +1,219 @@
 import React from 'react';
 import { Link } from 'react-router-dom';
-import { Globe, MapPin, DollarSign, Share2, ArrowRight, CheckCircle } from 'lucide-react';
+import { Search, Globe, ChevronRight, Star } from 'lucide-react';
 
 const LandingPage = () => {
+  // Random travel images for hero and inspiration sections
+  const heroImages = [
+    'https://images.unsplash.com/photo-1506905925346-21bda4d32df4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80',
+    'https://images.unsplash.com/photo-1469474968028-56623f02e42e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2074&q=80',
+    'https://images.unsplash.com/photo-1441974231531-c6227db76b6e?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2071&q=80'
+  ];
+
+  const inspirationImages = [
+    'https://images.unsplash.com/photo-1516483638261-f4dbaf036963?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2036&q=80',
+    'https://images.unsplash.com/photo-1499856871958-5b9627545d1a?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80',
+    'https://images.unsplash.com/photo-1449824913935-59a10b8d2000?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80'
+  ];
+
+  const popularDestinations = [
+    {
+      name: 'Paris',
+      image: 'https://images.unsplash.com/photo-1502602898536-47ad22581b52?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2064&q=80',
+      rating: 4.8
+    },
+    {
+      name: 'Rome',
+      image: 'https://images.unsplash.com/photo-1552832230-c0197dd311b5?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2096&q=80',
+      rating: 4.7
+    },
+    {
+      name: 'Barcelona',
+      image: 'https://images.unsplash.com/photo-1539037116277-4db20889f2d4?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80',
+      rating: 4.6
+    },
+    {
+      name: 'London',
+      image: 'https://images.unsplash.com/photo-1513635269975-59663e0ac1ad?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80',
+      rating: 4.5
+    },
+    {
+      name: 'Tokyo',
+      image: 'https://images.unsplash.com/photo-1540959733332-eab4deabeeaf?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2071&q=80',
+      rating: 4.9
+    },
+    {
+      name: 'New York',
+      image: 'https://images.unsplash.com/photo-1496442226666-8d4d0e62e6e9?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80',
+      rating: 4.4
+    }
+  ];
+
+  const selectedHeroImage = heroImages[Math.floor(Math.random() * heroImages.length)];
+  const selectedInspirationImage = inspirationImages[Math.floor(Math.random() * inspirationImages.length)];
+
   return (
     <div className="min-h-screen bg-white">
-      {/* Navigation */}
-      <nav className="bg-white shadow-sm border-b">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="flex justify-between items-center h-16">
-            <div className="flex items-center">
-              <div className="bg-primary-600 p-2 rounded-lg">
-                <Globe className="h-6 w-6 text-white" />
-              </div>
-              <span className="ml-2 text-xl font-bold text-gray-900">GlobeTrotter</span>
-            </div>
-            <div className="flex items-center space-x-4">
-              <Link
-                to="/login"
-                className="text-gray-600 hover:text-gray-900 px-3 py-2 rounded-md text-sm font-medium"
-              >
-                Sign In
-              </Link>
-              <Link
-                to="/signup"
-                className="btn-primary"
-              >
-                Get Started
-              </Link>
-            </div>
+      {/* Header */}
+      <header className="bg-white border-b border-gray-200 px-6 py-4 sticky top-0 z-50">
+        <div className="max-w-7xl mx-auto flex items-center justify-between">
+          {/* Logo */}
+          <Link to="/" className="flex items-center text-gray-900">
+            <Globe className="h-6 w-6 mr-2" />
+            <span className="text-xl font-bold">GlobeTrotter</span>
+          </Link>
+
+          {/* Navigation */}
+          <nav className="hidden md:flex items-center space-x-8">
+            <Link to="/explore" className="text-gray-600 hover:text-gray-900 transition-colors">Explore</Link>
+            <Link to="/trips" className="text-gray-600 hover:text-gray-900 transition-colors">Trips</Link>
+            <Link to="/inbox" className="text-gray-600 hover:text-gray-900 transition-colors">Inbox</Link>
+          </nav>
+
+          {/* Action Buttons */}
+          <div className="flex items-center space-x-4">
+            <Link
+              to="/signup"
+              className="bg-blue-600 text-white px-4 py-2 rounded-lg font-medium hover:bg-blue-700 transition-all duration-200 transform hover:scale-105"
+            >
+              Sign up
+            </Link>
+            <Link
+              to="/login"
+              className="bg-white text-gray-900 px-4 py-2 rounded-lg font-medium border border-gray-300 hover:bg-gray-50 transition-all duration-200 transform hover:scale-105"
+            >
+              Log in
+            </Link>
           </div>
         </div>
-      </nav>
+      </header>
 
       {/* Hero Section */}
-      <section className="bg-gradient-to-br from-blue-50 to-indigo-100 py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center">
-            <h1 className="text-4xl md:text-6xl font-bold text-gray-900 mb-6">
-              Your Journey Begins
-              <span className="text-gradient"> Here</span>
+      <section className="relative h-[600px] overflow-hidden">
+        <div 
+          className="absolute inset-0 bg-cover bg-center bg-no-repeat"
+          style={{ backgroundImage: `url(${selectedHeroImage})` }}
+        >
+          <div className="absolute inset-0 bg-black bg-opacity-40"></div>
+        </div>
+        
+        <div className="relative z-10 flex items-center justify-center h-full px-6">
+          <div className="text-center text-white max-w-4xl">
+            <h1 className="text-5xl md:text-6xl font-bold mb-6">
+              Discover Your Next Adventure
             </h1>
-            <p className="text-xl text-gray-600 mb-8 max-w-3xl mx-auto">
-              Plan multi-city adventures, track your budget, and share unforgettable experiences 
-              with friends and family. GlobeTrotter makes travel planning effortless and enjoyable.
+            <p className="text-xl md:text-2xl mb-8 opacity-90">
+              Explore destinations, plan your trips, and create unforgettable memories.
             </p>
-            <div className="flex flex-col sm:flex-row gap-4 justify-center">
-              <Link
-                to="/signup"
-                className="btn-primary text-lg px-8 py-4 flex items-center justify-center"
-              >
-                Start Planning
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Link>
-              <Link
-                to="/login"
-                className="btn-outline text-lg px-8 py-4"
-              >
-                Sign In
-              </Link>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* Features Section */}
-      <section className="py-20 bg-white">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="text-center mb-16">
-            <h2 className="text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-              Everything you need for perfect trips
-            </h2>
-            <p className="text-xl text-gray-600 max-w-2xl mx-auto">
-              From initial planning to sharing memories, GlobeTrotter has you covered
-            </p>
-          </div>
-
-          <div className="grid md:grid-cols-3 gap-8">
-            {/* Multi-city Planning */}
-            <div className="card-hover text-center">
-              <div className="bg-primary-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                <MapPin className="h-8 w-8 text-primary-600" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                Multi-City Planning
-              </h3>
-              <p className="text-gray-600">
-                Plan complex itineraries across multiple destinations with our intuitive 
-                drag-and-drop interface. Visualize your entire journey at a glance.
-              </p>
-            </div>
-
-            {/* Budget Tracking */}
-            <div className="card-hover text-center">
-              <div className="bg-green-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                <DollarSign className="h-8 w-8 text-green-600" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                Smart Budget Tracking
-              </h3>
-              <p className="text-gray-600">
-                Keep track of expenses in real-time. Set budgets for different categories 
-                and get alerts when you're approaching your limits.
-              </p>
-            </div>
-
-            {/* Sharing */}
-            <div className="card-hover text-center">
-              <div className="bg-purple-100 p-4 rounded-full w-16 h-16 mx-auto mb-4 flex items-center justify-center">
-                <Share2 className="h-8 w-8 text-purple-600" />
-              </div>
-              <h3 className="text-xl font-semibold text-gray-900 mb-3">
-                Easy Sharing
-              </h3>
-              <p className="text-gray-600">
-                Share your travel plans with friends and family. Collaborate on itineraries 
-                and keep everyone in the loop about your adventures.
-              </p>
-            </div>
-          </div>
-        </div>
-      </section>
-
-      {/* CTA Section */}
-      <section className="bg-primary-600 py-20">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl md:text-4xl font-bold text-white mb-4">
-            Ready to start your next adventure?
-          </h2>
-          <p className="text-xl text-primary-100 mb-8 max-w-2xl mx-auto">
-            Join thousands of travelers who trust GlobeTrotter to plan their perfect trips
-          </p>
-          <Link
-            to="/signup"
-            className="bg-white text-primary-600 hover:bg-gray-100 font-medium py-3 px-8 rounded-lg text-lg inline-flex items-center"
-          >
-            Get Started Free
-            <ArrowRight className="ml-2 h-5 w-5" />
-          </Link>
-        </div>
-      </section>
-
-      {/* Footer */}
-      <footer className="bg-gray-900 text-white py-12">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="grid md:grid-cols-4 gap-8">
-            <div>
-              <div className="flex items-center mb-4">
-                <div className="bg-primary-600 p-2 rounded-lg">
-                  <Globe className="h-6 w-6 text-white" />
+            
+            {/* Search Bar */}
+            <div className="max-w-2xl mx-auto">
+              <div className="flex bg-white rounded-lg shadow-lg overflow-hidden">
+                <div className="flex-1 flex items-center px-4">
+                  <Search className="h-5 w-5 text-gray-400 mr-3" />
+                  <input
+                    type="text"
+                    placeholder="Where to?"
+                    className="flex-1 py-4 text-gray-900 placeholder-gray-500 focus:outline-none"
+                  />
                 </div>
-                <span className="ml-2 text-xl font-bold">GlobeTrotter</span>
+                <button className="bg-blue-600 text-white px-8 py-4 font-medium hover:bg-blue-700 transition-colors">
+                  Search
+                </button>
               </div>
-              <p className="text-gray-400">
-                Your ultimate travel planning companion. Making every journey memorable.
-              </p>
             </div>
-            
-            <div>
-              <h3 className="font-semibold mb-4">Product</h3>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white">Features</a></li>
-                <li><a href="#" className="hover:text-white">Pricing</a></li>
-                <li><a href="#" className="hover:text-white">API</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h3 className="font-semibold mb-4">Support</h3>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white">Help Center</a></li>
-                <li><a href="#" className="hover:text-white">Contact Us</a></li>
-                <li><a href="#" className="hover:text-white">Privacy Policy</a></li>
-              </ul>
-            </div>
-            
-            <div>
-              <h3 className="font-semibold mb-4">Company</h3>
-              <ul className="space-y-2 text-gray-400">
-                <li><a href="#" className="hover:text-white">About</a></li>
-                <li><a href="#" className="hover:text-white">Blog</a></li>
-                <li><a href="#" className="hover:text-white">Careers</a></li>
-              </ul>
-            </div>
-          </div>
-          
-          <div className="border-t border-gray-800 mt-8 pt-8 text-center text-gray-400">
-            <p>&copy; 2024 GlobeTrotter. All rights reserved.</p>
           </div>
         </div>
-      </footer>
+      </section>
+
+      {/* Popular Destinations Section */}
+      <section className="py-16 px-6">
+        <div className="max-w-7xl mx-auto">
+          <h2 className="text-3xl font-bold text-gray-900 mb-8">
+            Popular Destinations
+          </h2>
+          
+          {/* Horizontally Scrollable Cards */}
+          <div className="flex space-x-6 overflow-x-auto pb-4 scrollbar-hide">
+            {popularDestinations.map((destination, index) => (
+              <div
+                key={index}
+                className="flex-shrink-0 w-80 bg-white rounded-lg shadow-lg overflow-hidden hover:shadow-xl transition-all duration-300 transform hover:scale-105 cursor-pointer group"
+              >
+                <div className="relative h-48 overflow-hidden">
+                  <img
+                    src={destination.image}
+                    alt={destination.name}
+                    className="w-full h-full object-cover group-hover:scale-110 transition-transform duration-300"
+                  />
+                  <div className="absolute inset-0 bg-gradient-to-t from-black/50 to-transparent"></div>
+                  <div className="absolute bottom-4 left-4 right-4">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-white font-semibold text-lg">{destination.name}</h3>
+                      <div className="flex items-center bg-white/20 backdrop-blur-sm rounded-full px-2 py-1">
+                        <Star className="h-4 w-4 text-yellow-400 fill-current" />
+                        <span className="text-white text-sm ml-1">{destination.rating}</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            ))}
+          </div>
+        </div>
+      </section>
+
+      {/* Travel Inspiration Section */}
+      <section className="py-16 px-6 bg-gray-50">
+        <div className="max-w-7xl mx-auto">
+          <div className="bg-white rounded-2xl shadow-lg overflow-hidden">
+            <div className="grid grid-cols-1 lg:grid-cols-2">
+              {/* Left Side - Image */}
+              <div className="relative h-80 lg:h-full">
+                <img
+                  src={selectedInspirationImage}
+                  alt="Travel Inspiration"
+                  className="w-full h-full object-cover"
+                />
+              </div>
+              
+              {/* Right Side - Content */}
+              <div className="p-8 lg:p-12 flex flex-col justify-center">
+                <h3 className="text-2xl font-bold text-gray-900 mb-4">
+                  Top 10 Hidden Gems in Europe
+                </h3>
+                <p className="text-gray-600 mb-6 leading-relaxed">
+                  Discover the lesser-known destinations that offer unique experiences and breathtaking scenery.
+                </p>
+                <button className="bg-blue-600 text-white px-6 py-3 rounded-lg font-medium hover:bg-blue-700 transition-all duration-200 transform hover:scale-105 inline-flex items-center">
+                  Read More
+                  <ChevronRight className="ml-2 h-4 w-4" />
+                </button>
+              </div>
+            </div>
+          </div>
+        </div>
+      </section>
+
+      {/* Bottom CTA */}
+      <section className="py-16 px-6">
+        <div className="max-w-4xl mx-auto text-center">
+          <button className="bg-blue-600 text-white px-12 py-4 rounded-lg text-lg font-medium hover:bg-blue-700 transition-all duration-200 transform hover:scale-105 shadow-lg">
+            Sign up to start planning
+          </button>
+        </div>
+      </section>
+
+      {/* Custom scrollbar styles */}
+      <style jsx>{`
+        .scrollbar-hide {
+          -ms-overflow-style: none;
+          scrollbar-width: none;
+        }
+        .scrollbar-hide::-webkit-scrollbar {
+          display: none;
+        }
+      `}</style>
     </div>
   );
 };

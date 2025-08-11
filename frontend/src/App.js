@@ -9,6 +9,7 @@ import VerifyEmailPage from './pages/VerifyEmailPage';
 import ForgotPasswordPage from './pages/ForgotPasswordPage';
 import ResetPasswordPage from './pages/ResetPasswordPage';
 import DashboardPage from './pages/DashboardPage';
+import PlanTripPage from './pages/PlanTripPage';
 import ProtectedRoute from './components/ProtectedRoute';
 
 function App() {
@@ -16,7 +17,7 @@ function App() {
     <AuthProvider>
       <Router>
         <div className="App">
-          <Toaster 
+          <Toaster
             position="top-right"
             toastOptions={{
               duration: 4000,
@@ -27,14 +28,14 @@ function App() {
               success: {
                 duration: 3000,
                 iconTheme: {
-                  primary: '#22c55e',
+                  primary: '#10B981',
                   secondary: '#fff',
                 },
               },
               error: {
-                duration: 5000,
+                duration: 4000,
                 iconTheme: {
-                  primary: '#ef4444',
+                  primary: '#EF4444',
                   secondary: '#fff',
                 },
               },
@@ -48,13 +49,21 @@ function App() {
             <Route path="/verify-email/:token" element={<VerifyEmailPage />} />
             <Route path="/forgot-password" element={<ForgotPasswordPage />} />
             <Route path="/reset-password" element={<ResetPasswordPage />} />
-            <Route 
-              path="/dashboard" 
+            <Route
+              path="/dashboard"
               element={
                 <ProtectedRoute>
                   <DashboardPage />
                 </ProtectedRoute>
-              } 
+              }
+            />
+            <Route
+              path="/plan-trip"
+              element={
+                <ProtectedRoute>
+                  <PlanTripPage />
+                </ProtectedRoute>
+              }
             />
           </Routes>
         </div>

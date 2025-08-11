@@ -11,10 +11,21 @@
     "build": "cd frontend && npm run build",
     "start": "cd backend && npm start"
   },
-  "keywords": ["travel", "planning", "authentication", "mongodb", "react", "nodejs"],
+  "keywords": [
+    "travel",
+    "planning",
+    "authentication",
+    "mongodb",
+    "react",
+    "nodejs"
+  ],
   "author": "GlobeTrotter Team",
   "license": "MIT",
   "devDependencies": {
     "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "@googlemaps/js-api-loader": "^1.16.10",
+    "axios": "^1.11.0"
   }
 }
