@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { useNavigate } from 'react-router-dom';
+import axios from 'axios';
 import { 
   Calendar, 
   MapPin, 
@@ -9,13 +10,25 @@ import {
   Star,
   Clock,
   Users,
-  Heart
+  Navigation,
+  Map,
+  DollarSign,
+  Hotel,
+  Utensils,
+  Car,
+  Plane,
+  Train,
+  Bus,
+  Cloud,
+  Info,
+  TrendingUp,
+  Shield,
+  Wifi,
+  UserCheck
 } from 'lucide-react';
-import { useAuth } from '../contexts/AuthContext';
 import toast from 'react-hot-toast';
 
 const PlanTripPage = () => {
-  const { user } = useAuth();
   const navigate = useNavigate();
   
   // Form state
@@ -35,6 +48,91 @@ const PlanTripPage = () => {
   const [searchResults, setSearchResults] = useState([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [selectedPackages, setSelectedPackages] = useState([]);
+  const [routeInfo, setRouteInfo] = useState(null);
+  const [totalAttractions, setTotalAttractions] = useState(0);
+  const [pricing, setPricing] = useState(null);
+  const [tripSummary, setTripSummary] = useState(null);
+  const [transportOptions, setTransportOptions] = useState(null);
+  const [hotelOptions, setHotelOptions] = useState(null);
+  const [weatherData, setWeatherData] = useState(null);
+  const [travelTips, setTravelTips] = useState(null);
+
+  // Autocomplete state
+  const [startSuggestions, setStartSuggestions] = useState([]);
+  const [endSuggestions, setEndSuggestions] = useState([]);
+  const [stopSuggestions, setStopSuggestions] = useState([]);
+  const [showStartSuggestions, setShowStartSuggestions] = useState(false);
+  const [showEndSuggestions, setShowEndSuggestions] = useState(false);
+  const [showStopSuggestions, setShowStopSuggestions] = useState(false);
+  const [activeStopIndex, setActiveStopIndex] = useState(-1);
+
+  // Refs for autocomplete
+  const startInputRef = useRef(null);
+  const endInputRef = useRef(null);
+  const stopInputRefs = useRef([]);
+
+  // Date validation
+  const validateDates = () => {
+    const today = new Date();
+    today.setHours(0, 0, 0, 0);
+    
+    const startDate = new Date(tripData.startDate);
+    const endDate = new Date(tripData.endDate);
+    
+    if (startDate < today) {
+      toast.error('Start date cannot be in the past');
+      return false;
+    }
+    
+    if (endDate <= startDate) {
+      toast.error('End date must be after start date');
+      return false;
+    }
+    
+    const diffTime = Math.abs(endDate - startDate);
+    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
+    
+    if (diffDays > 30) {
+      toast.error('Trip duration cannot exceed 30 days');
+      return false;
+    }
+    
+    return true;
+  };
+
+  // Form validation
+  const validateForm = () => {
+    if (!tripData.startPlace.trim()) {
+      toast.error('Please enter a start place');
+      return false;
+    }
+    
+    if (!tripData.endPlace.trim()) {
+      toast.error('Please enter a destination');
+      return false;
+    }
+    
+    if (!tripData.startDate) {
+      toast.error('Please select a start date');
+      return false;
+    }
+    
+    if (!tripData.endDate) {
+      toast.error('Please select an end date');
+      return false;
+    }
+    
+    if (!validateDates()) {
+      return false;
+    }
+    
+    if (tripData.travelers < 1 || tripData.travelers > 10) {
+      toast.error('Number of travelers must be between 1 and 10');
+      return false;
+    }
+    
+    return true;
+  };
 
   // Handle form changes
   const handleInputChange = (field, value) => {
@@ -42,6 +140,73 @@ const PlanTripPage = () => {
       ...prev,
       [field]: value
     }));
+    
+    // Clear suggestions when user starts typing
+    if (field === 'startPlace') {
+      setShowStartSuggestions(false);
+    } else if (field === 'endPlace') {
+      setShowEndSuggestions(false);
+    }
+  };
+
+  // Search places for autocomplete using our backend API
+  const searchPlaces = async (query, setSuggestions, setShowSuggestions) => {
+    if (!query || query.length < 2) {
+      setSuggestions([]);
+      setShowSuggestions(false);
+      return;
+    }
+
+    try {
+      const response = await axios.get('/api/trips/search-places', {
+        params: { query }
+      });
+
+      if (response.data.places && response.data.places.length > 0) {
+        setSuggestions(response.data.places);
+        setShowSuggestions(true);
+      } else {
+        setSuggestions([]);
+        setShowSuggestions(false);
+      }
+    } catch (error) {
+      console.error('Error searching places:', error);
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+            const places = predictions.map(prediction => ({
+              place_id: prediction.place_id,
+              description: prediction.description,
+              main_text: prediction.structured_formatting?.main_text || '',
+              secondary_text: prediction.structured_formatting?.secondary_text || '',
+              types: prediction.types || []
+            }));
+            setSuggestions(places);
+            setShowSuggestions(true);
+          } else {
+            setSuggestions([]);
+            setShowSuggestions(false);
+          }
+        });
+      } else {
+        // Fallback to backend API if Google Places is not loaded
+        const response = await axios.get(`/api/trips/search-places?query=${encodeURIComponent(query)}`);
+        setSuggestions(response.data.places);
+        setShowSuggestions(true);
+      }
+    } catch (error) {
+      console.error('Error searching places:', error);
+      setSuggestions([]);
+      setShowSuggestions(false);
+    }
+  };
+
+  // Handle place selection
+  const selectPlace = (place, field, setSuggestions, setShowSuggestions) => {
+    handleInputChange(field, place.description);
+    setSuggestions([]);
+    setShowSuggestions(false);
   };
 
   // Add stop
@@ -51,6 +216,7 @@ const PlanTripPage = () => {
         ...prev,
         stops: [...prev.stops, '']
       }));
+      setActiveStopIndex(tripData.stops.length);
     } else {
       toast.error('Maximum 5 stops allowed');
     }
@@ -62,6 +228,7 @@ const PlanTripPage = () => {
       ...prev,
       stops: prev.stops.filter((_, i) => i !== index)
     }));
+    setActiveStopIndex(-1);
   };
 
   // Update stop
@@ -70,6 +237,89 @@ const PlanTripPage = () => {
       ...prev,
       stops: prev.stops.map((stop, i) => i === index ? value : stop)
     }));
+    
+    // Search for suggestions
+    if (value.length >= 2) {
+      searchPlaces(value, setStopSuggestions, setShowStopSuggestions);
+      setActiveStopIndex(index);
+    } else {
+      setStopSuggestions([]);
+      setShowStopSuggestions(false);
+    }
+  };
+
+  // Select stop
+  const selectStop = (place, index) => {
+    setTripData(prev => ({
+      ...prev,
+      stops: prev.stops.map((stop, i) => i === index ? place.description : stop)
+    }));
+    setStopSuggestions([]);
+    setShowStopSuggestions(false);
+    setActiveStopIndex(-1);
+  };
+
+  // Get transport options
+  const getTransportOptions = async () => {
+    if (!tripData.startPlace || !tripData.endPlace || !tripData.startDate) return;
+    
+    try {
+      const response = await axios.get('/api/trips/transport-options', {
+        params: {
+          origin: tripData.startPlace,
+          destination: tripData.endPlace,
+          date: tripData.startDate,
+          travelers: tripData.travelers
+        }
+      });
+      setTransportOptions(response.data);
+    } catch (error) {
+      console.error('Error getting transport options:', error);
+    }
+  };
+
+  // Get hotel options
+  const getHotelOptions = async () => {
+    if (!tripData.startPlace || !tripData.startDate || !tripData.endDate) return;
+    
+    try {
+      const response = await axios.get('/api/trips/hotel-options', {
+        params: {
+          location: tripData.startPlace,
+          checkIn: tripData.startDate,
+          checkOut: tripData.endDate,
+          adults: tripData.travelers,
+          rooms: Math.ceil(tripData.travelers / 2)
+        }
+      });
+      setHotelOptions(response.data);
+    } catch (error) {
+      console.error('Error getting hotel options:', error);
+    }
+  };
+
+  // Get weather data
+  const getWeatherData = async () => {
+    if (!tripData.startPlace) return;
+    
+    try {
+      const response = await axios.get(`/api/trips/weather/${encodeURIComponent(tripData.startPlace)}`);
+      setWeatherData(response.data);
+    } catch (error) {
+      console.error('Error getting weather data:', error);
+    }
+  };
+
+  // Get travel tips
+  const getTravelTips = async () => {
+    if (!tripData.endPlace) return;
+    
+    try {
+      const response = await axios.get(`/api/trips/travel-tips/${encodeURIComponent(tripData.endPlace)}`);
+      setTravelTips(response.data);
+    } catch (error) {
+      console.error('Error getting travel tips:', error);
+    }
   };
 
   // Search for packages
@@ -81,78 +331,39 @@ const PlanTripPage = () => {
 
     setIsLoading(true);
     try {
-      // Simulate API call
-      await new Promise(resolve => setTimeout(resolve, 2000));
+      // Get all data in parallel
+      const [packagesResponse, transportResponse, hotelResponse, weatherResponse, tipsResponse] = await Promise.all([
+        axios.post('/api/trips/generate-packages', {
+          startPlace: tripData.startPlace,
+          endPlace: tripData.endPlace,
+          stops: tripData.stops.filter(stop => stop.trim() !== ''),
+          startDate: tripData.startDate,
+          endDate: tripData.endDate,
+          travelers: tripData.travelers,
+          budget: tripData.budget,
+          tripType: tripData.tripType
+        }),
+        getTransportOptions(),
+        getHotelOptions(),
+        getWeatherData(),
+        getTravelTips()
+      ]);
       
-      // Mock search results
-      const mockResults = generateMockPackages();
-      setSearchResults(mockResults);
+      const result = packagesResponse.data;
+      setSearchResults(result.packages);
+      setRouteInfo(result.routeInfo);
+      setTotalAttractions(result.totalAttractions);
+      setPricing(result.pricing);
+      setTripSummary(result.tripSummary);
       setShowSuggestions(true);
       
-      toast.success('Found packages for your trip!');
+      toast.success(`Found ${result.packages.length} packages for your trip!`);
     } catch (error) {
+      console.error('Error searching packages:', error);
       toast.error('Failed to search packages');
     } finally {
       setIsLoading(false);
     }
-  };
-
-  // Generate mock packages
-  const generateMockPackages = () => {
-    const route = `${tripData.startPlace} → ${tripData.stops.join(' → ')} → ${tripData.endPlace}`;
-    const duration = calculateDuration(tripData.startDate, tripData.endDate);
-    
-    return [
-      {
-        id: 'custom-1',
-        title: 'Budget Explorer',
-        route: route,
-        duration: `${duration} days`,
-        price: '₹15,000',
-        rating: 4.2,
-        image: 'https://images.unsplash.com/photo-1488646953014-85cb44e25828?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80',
-        highlights: ['Local transport', 'Budget hotels', 'Street food'],
-        transport: ['bus', 'train'],
-        accommodation: 'Budget hotels',
-        type: 'budget'
-      },
-      {
-        id: 'custom-2',
-        title: 'Comfort Journey',
-        route: route,
-        duration: `${duration} days`,
-        price: '₹28,000',
-        rating: 4.5,
-        image: 'https://images.unsplash.com/photo-1578662996442-48f60103fc96?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2070&q=80',
-        highlights: ['AC transport', '3-star hotels', 'Guided tours'],
-        transport: ['car', 'train'],
-        accommodation: '3-star hotels',
-        type: 'comfort'
-      },
-      {
-        id: 'custom-3',
-        title: 'Luxury Experience',
-        route: route,
-        duration: `${duration} days`,
-        price: '₹45,000',
-        rating: 4.8,
-        image: 'https://images.unsplash.com/photo-1564507592333-c60657eea523?ixlib=rb-4.0.3&ixid=M3wxMjA3fDB8MHxwaG90by1wYWdlfHx8fGVufDB8fHx8fA%3D%3D&auto=format&fit=crop&w=2071&q=80',
-        highlights: ['Private transport', '5-star hotels', 'Fine dining'],
-        transport: ['car', 'flight'],
-        accommodation: '5-star hotels',
-        type: 'luxury'
-      }
-    ];
-  };
-
-  // Calculate duration
-  const calculateDuration = (startDate, endDate) => {
-    if (!startDate || !endDate) return 0;
-    const start = new Date(startDate);
-    const end = new Date(endDate);
-    const diffTime = Math.abs(end - start);
-    const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
-    return diffDays;
   };
 
   // Select package
@@ -171,10 +382,86 @@ const PlanTripPage = () => {
     navigate('/itinerary', { 
       state: { 
         tripData, 
-        selectedPackages 
+        selectedPackages,
+        routeInfo,
+        totalAttractions,
+        pricing,
+        tripSummary
       } 
     });
   };
+
+  // Get transport icon
+  const getTransportIcon = (transport) => {
+    if (typeof transport === 'string') {
+      switch (transport) {
+        case 'car': return <Car className="h-4 w-4" />;
+        case 'train': return <Train className="h-4 w-4" />;
+        case 'bus': return <Bus className="h-4 w-4" />;
+        case 'flight': return <Plane className="h-4 w-4" />;
+        default: return <Car className="h-4 w-4" />;
+      }
+    }
+    
+    // If transport is an object (from real-time API)
+    if (transport.airline) return <Plane className="h-4 w-4" />;
+    if (transport.number) return <Train className="h-4 w-4" />;
+    if (transport.type) return <Bus className="h-4 w-4" />;
+    
+    return <Car className="h-4 w-4" />;
+  };
+
+  // Format price
+  const formatPrice = (price) => {
+    if (typeof price === 'string') return price;
+    return new Intl.NumberFormat('en-IN', {
+      style: 'currency',
+      currency: 'INR',
+      minimumFractionDigits: 0
+    }).format(price);
+  };
+
+  // Get transport details
+  const getTransportDetails = (transport) => {
+    if (typeof transport === 'string') return transport;
+    
+    if (transport.airline) {
+      return `${transport.airline} - ${transport.duration}`;
+    }
+    if (transport.number) {
+      return `${transport.name} (${transport.number}) - ${transport.duration}`;
+    }
+    if (transport.type) {
+      return `${transport.name} - ${transport.duration}`;
+    }
+    
+    return 'Transport';
+  };
+
+  // Handle click outside to close autocomplete
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (startInputRef.current && !startInputRef.current.contains(event.target)) {
+        setShowStartSuggestions(false);
+      }
+      if (endInputRef.current && !endInputRef.current.contains(event.target)) {
+        setShowEndSuggestions(false);
+      }
+      if (stopInputRefs.current.length > 0) {
+        const isClickInsideStop = stopInputRefs.current.some(ref => 
+          ref && ref.contains(event.target)
+        );
+        if (!isClickInsideStop) {
+          setShowStopSuggestions(false);
+        }
+      }
+    };
+
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -229,37 +516,87 @@ const PlanTripPage = () => {
                 </div>
 
                 {/* Start Place */}
-                <div>
+                <div className="relative">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     Start Place
                   </label>
                   <div className="relative">
                     <input
+                      ref={startInputRef}
                       type="text"
                       value={tripData.startPlace}
-                      onChange={(e) => handleInputChange('startPlace', e.target.value)}
+                      onChange={(e) => {
+                        handleInputChange('startPlace', e.target.value);
+                        searchPlaces(e.target.value, setStartSuggestions, setShowStartSuggestions);
+                      }}
+                      onFocus={() => {
+                        if (tripData.startPlace.length >= 2) {
+                          setShowStartSuggestions(true);
+                        }
+                      }}
                       placeholder="e.g., Mumbai, Maharashtra"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                     <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   </div>
+                  
+                  {/* Start Place Suggestions */}
+                  {showStartSuggestions && startSuggestions.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {startSuggestions.map((place, index) => (
+                        <div
+                          key={index}
+                          onClick={() => selectPlace(place, 'startPlace', setStartSuggestions, setShowStartSuggestions)}
+                          className="px-4 py-3 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                        >
+                          <div className="font-medium text-gray-900">{place.main_text}</div>
+                          <div className="text-sm text-gray-600">{place.secondary_text}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
 
                 {/* End Place */}
-                <div>
+                <div className="relative">
                   <label className="block text-sm font-medium text-gray-700 mb-2">
                     End Place
                   </label>
                   <div className="relative">
                     <input
+                      ref={endInputRef}
                       type="text"
                       value={tripData.endPlace}
-                      onChange={(e) => handleInputChange('endPlace', e.target.value)}
+                      onChange={(e) => {
+                        handleInputChange('endPlace', e.target.value);
+                        searchPlaces(e.target.value, setEndSuggestions, setShowEndSuggestions);
+                      }}
+                      onFocus={() => {
+                        if (tripData.endPlace.length >= 2) {
+                          setShowEndSuggestions(true);
+                        }
+                      }}
                       placeholder="e.g., Delhi, India"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
                     <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   </div>
+                  
+                  {/* End Place Suggestions */}
+                  {showEndSuggestions && endSuggestions.length > 0 && (
+                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                      {endSuggestions.map((place, index) => (
+                        <div
+                          key={index}
+                          onClick={() => selectPlace(place, 'endPlace', setEndSuggestions, setShowEndSuggestions)}
+                          className="px-4 py-3 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                        >
+                          <div className="font-medium text-gray-900">{place.main_text}</div>
+                          <div className="text-sm text-gray-600">{place.secondary_text}</div>
+                        </div>
+                      ))}
+                    </div>
+                  )}
                 </div>
               </div>
 
@@ -280,24 +617,43 @@ const PlanTripPage = () => {
                 </div>
                 
                 {tripData.stops.map((stop, index) => (
-                  <div key={index} className="flex items-center space-x-3 mb-3">
-                    <div className="flex-1 relative">
-                      <input
-                        type="text"
-                        value={stop}
-                        onChange={(e) => updateStop(index, e.target.value)}
-                        placeholder={`Stop ${index + 1} (e.g., Surat, Gujarat)`}
-                        className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                      />
-                      <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                  <div key={index} className="relative mb-3">
+                    <div className="flex items-center space-x-3">
+                      <div className="flex-1 relative">
+                        <input
+                          ref={el => stopInputRefs.current[index] = el}
+                          type="text"
+                          value={stop}
+                          onChange={(e) => updateStop(index, e.target.value)}
+                          placeholder={`Stop ${index + 1} (e.g., Surat, Gujarat)`}
+                          className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                        />
+                        <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => removeStop(index)}
+                        className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
+                      >
+                        <X className="h-5 w-5" />
+                      </button>
                     </div>
-                    <button
-                      type="button"
-                      onClick={() => removeStop(index)}
-                      className="p-2 text-red-500 hover:text-red-700 hover:bg-red-50 rounded-lg transition-colors"
-                    >
-                      <X className="h-5 w-5" />
-                    </button>
+                    
+                    {/* Stop Suggestions */}
+                    {showStopSuggestions && activeStopIndex === index && stopSuggestions.length > 0 && (
+                      <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                        {stopSuggestions.map((place, placeIndex) => (
+                          <div
+                            key={placeIndex}
+                            onClick={() => selectStop(place, index)}
+                            className="px-4 py-3 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                          >
+                            <div className="font-medium text-gray-900">{place.main_text}</div>
+                            <div className="text-sm text-gray-600">{place.secondary_text}</div>
+                          </div>
+                        ))}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
@@ -330,7 +686,7 @@ const PlanTripPage = () => {
                   >
                     <option value="">Any Budget</option>
                     <option value="budget">Budget (₹5,000 - ₹15,000)</option>
-                    <option value="mid">Mid-range (₹15,000 - ₹30,000)</option>
+                    <option value="comfort">Mid-range (₹15,000 - ₹30,000)</option>
                     <option value="luxury">Luxury (₹30,000+)</option>
                   </select>
                 </div>
@@ -374,6 +730,91 @@ const PlanTripPage = () => {
               </div>
             </div>
 
+            {/* Weather Information */}
+            {weatherData && (
+              <div className="bg-blue-50 border border-blue-200 rounded-lg p-6 mb-8">
+                <h3 className="text-lg font-semibold text-blue-900 mb-4 flex items-center">
+                  <Cloud className="h-5 w-5 mr-2" />
+                  Weather Forecast for {weatherData.location}
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-6 gap-4">
+                  <div className="text-center">
+                    <p className="text-sm text-blue-600">Current</p>
+                    <p className="text-2xl font-bold text-blue-900">{weatherData.current.temperature}°C</p>
+                    <p className="text-sm text-blue-700">{weatherData.current.condition}</p>
+                  </div>
+                  {weatherData.forecast.map((day, index) => (
+                    <div key={index} className="text-center">
+                      <p className="text-sm text-blue-600">{new Date(day.date).toLocaleDateString('en-US', { weekday: 'short' })}</p>
+                      <p className="text-lg font-bold text-blue-900">{day.high}°C</p>
+                      <p className="text-sm text-blue-700">{day.low}°C</p>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Route Information */}
+            {routeInfo && (
+              <div className="bg-green-50 border border-green-200 rounded-lg p-6 mb-8">
+                <h3 className="text-lg font-semibold text-green-900 mb-4 flex items-center">
+                  <Navigation className="h-5 w-5 mr-2" />
+                  Route Information
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-4 gap-4">
+                  <div className="text-center">
+                    <p className="text-sm text-green-600">Total Distance</p>
+                    <p className="text-xl font-bold text-green-900">{routeInfo.distance}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm text-green-600">Travel Time</p>
+                    <p className="text-xl font-bold text-green-900">{routeInfo.duration}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm text-green-600">Attractions Found</p>
+                    <p className="text-xl font-bold text-green-900">{totalAttractions}</p>
+                  </div>
+                  <div className="text-center">
+                    <p className="text-sm text-green-600">Trip Duration</p>
+                    <p className="text-xl font-bold text-green-900">{tripSummary?.duration} days</p>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* Transport Options */}
+            {transportOptions && (
+              <div className="bg-purple-50 border border-purple-200 rounded-lg p-6 mb-8">
+                <h3 className="text-lg font-semibold text-purple-900 mb-4 flex items-center">
+                  <TrendingUp className="h-5 w-5 mr-2" />
+                  Transportation Options
+                </h3>
+                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+                  {transportOptions.flights && transportOptions.flights.length > 0 && (
+                    <div className="text-center p-4 bg-white rounded-lg">
+                      <Plane className="h-8 w-8 text-purple-600 mx-auto mb-2" />
+                      <p className="text-sm text-purple-600">Flights</p>
+                      <p className="text-lg font-bold text-purple-900">From ₹{transportOptions.summary.cheapestFlight}</p>
+                    </div>
+                  )}
+                  {transportOptions.trains && transportOptions.trains.length > 0 && (
+                    <div className="text-center p-4 bg-white rounded-lg">
+                      <Train className="h-8 w-8 text-purple-600 mx-auto mb-2" />
+                      <p className="text-sm text-purple-600">Trains</p>
+                      <p className="text-lg font-bold text-purple-900">From ₹{transportOptions.summary.cheapestTrain}</p>
+                    </div>
+                  )}
+                  {transportOptions.buses && transportOptions.buses.length > 0 && (
+                    <div className="text-center p-4 bg-white rounded-lg">
+                      <Bus className="h-8 w-8 text-purple-600 mx-auto mb-2" />
+                      <p className="text-sm text-purple-600">Buses</p>
+                      <p className="text-lg font-bold text-purple-900">From ₹{transportOptions.summary.cheapestBus}</p>
+                    </div>
+                  )}
+                </div>
+              </div>
+            )}
+
             {/* Search Results */}
             {showSuggestions && searchResults.length > 0 && (
               <div className="bg-white rounded-lg shadow-md p-6 mb-8">
@@ -405,7 +846,79 @@ const PlanTripPage = () => {
                                   <Star className="h-4 w-4 mr-1 text-yellow-400 fill-current" />
                                   {pkg.rating}
                                 </span>
+                                {pkg.routeInfo && (
+                                  <span className="flex items-center">
+                                    <Map className="h-4 w-4 mr-1" />
+                                    {pkg.routeInfo.distance}
+                                  </span>
+                                )}
                               </div>
+                              
+                              {/* Transport Information */}
+                              {pkg.transport && (
+                                <div className="mb-3 p-3 bg-gray-50 rounded-lg">
+                                  <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center">
+                                    {getTransportIcon(pkg.transport)}
+                                    <span className="ml-2">Transport:</span>
+                                  </h4>
+                                  <p className="text-sm text-gray-600">{getTransportDetails(pkg.transport)}</p>
+                                </div>
+                              )}
+
+                              {/* Accommodation Information */}
+                              {pkg.accommodation && (
+                                <div className="mb-3 p-3 bg-gray-50 rounded-lg">
+                                  <h4 className="text-sm font-medium text-gray-700 mb-2 flex items-center">
+                                    <Hotel className="h-4 w-4 mr-2" />
+                                    <span>Accommodation:</span>
+                                  </h4>
+                                  <p className="text-sm text-gray-600">{pkg.accommodation.name || pkg.accommodation}</p>
+                                  {pkg.accommodation.rating && (
+                                    <div className="flex items-center mt-1">
+                                      <Star className="h-3 w-3 text-yellow-400 fill-current mr-1" />
+                                      <span className="text-xs text-gray-600">{pkg.accommodation.rating}</span>
+                                    </div>
+                                  )}
+                                </div>
+                              )}
+                              
+                              {/* Pricing Breakdown */}
+                              {pkg.pricing && (
+                                <div className="mb-3 p-3 bg-gray-50 rounded-lg">
+                                  <h4 className="text-sm font-medium text-gray-700 mb-2">Cost Breakdown:</h4>
+                                  <div className="grid grid-cols-2 gap-2 text-xs">
+                                    <div className="flex items-center justify-between">
+                                      <span className="flex items-center">
+                                        <Car className="h-3 w-3 mr-1" />
+                                        Transport:
+                                      </span>
+                                      <span className="font-medium">{formatPrice(pkg.pricing.transport)}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                      <span className="flex items-center">
+                                        <Hotel className="h-3 w-3 mr-1" />
+                                        Accommodation:
+                                      </span>
+                                      <span className="font-medium">{formatPrice(pkg.pricing.accommodation)}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                      <span className="flex items-center">
+                                        <Utensils className="h-3 w-3 mr-1" />
+                                        Food:
+                                      </span>
+                                      <span className="font-medium">{formatPrice(pkg.pricing.food)}</span>
+                                    </div>
+                                    <div className="flex items-center justify-between">
+                                      <span className="flex items-center">
+                                        <Map className="h-3 w-3 mr-1" />
+                                        Activities:
+                                      </span>
+                                      <span className="font-medium">{formatPrice(pkg.pricing.activities)}</span>
+                                    </div>
+                                  </div>
+                                </div>
+                              )}
+
                               <div className="flex flex-wrap gap-2 mb-3">
                                 {pkg.highlights.map((highlight, index) => (
                                   <span
@@ -416,6 +929,39 @@ const PlanTripPage = () => {
                                   </span>
                                 ))}
                               </div>
+                              
+                              {pkg.attractions && pkg.attractions.length > 0 && (
+                                <div className="mb-3">
+                                  <p className="text-sm text-gray-600 mb-1">Top Attractions:</p>
+                                  <div className="flex flex-wrap gap-1">
+                                    {pkg.attractions.map((attr, index) => (
+                                      <span
+                                        key={index}
+                                        className="px-2 py-1 bg-green-100 text-green-800 text-xs rounded-full"
+                                      >
+                                        {attr.name}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
+
+                              {/* Features */}
+                              {pkg.features && (
+                                <div className="mb-3">
+                                  <p className="text-sm text-gray-600 mb-1">Included Features:</p>
+                                  <div className="flex flex-wrap gap-1">
+                                    {pkg.features.map((feature, index) => (
+                                      <span
+                                        key={index}
+                                        className="px-2 py-1 bg-purple-100 text-purple-800 text-xs rounded-full"
+                                      >
+                                        {feature}
+                                      </span>
+                                    ))}
+                                  </div>
+                                </div>
+                              )}
                             </div>
                             <div className="text-right">
                               <p className="text-2xl font-bold text-gray-900">{pkg.price}</p>
@@ -465,6 +1011,91 @@ const PlanTripPage = () => {
                 >
                   View Itinerary
                 </button>
+              </div>
+            )}
+
+            {/* Pricing Summary */}
+            {pricing && (
+              <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <DollarSign className="h-5 w-5 mr-2" />
+                  Pricing Summary
+                </h3>
+                <div className="space-y-3">
+                  {Object.entries(pricing).map(([type, costs]) => (
+                    <div key={type} className="border border-gray-200 rounded-lg p-3">
+                      <h4 className="font-medium text-gray-900 capitalize mb-2">{type} Package</h4>
+                      <div className="text-sm space-y-1">
+                        <div className="flex items-center justify-between">
+                          <span className="flex items-center">
+                            <Car className="h-3 w-3 mr-1" />
+                            Transport:
+                          </span>
+                          <span className="font-medium">{formatPrice(costs.transport)}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="flex items-center">
+                            <Hotel className="h-3 w-3 mr-1" />
+                            Accommodation:
+                          </span>
+                          <span className="font-medium">{formatPrice(costs.accommodation)}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="flex items-center">
+                            <Utensils className="h-3 w-3 mr-1" />
+                            Food:
+                          </span>
+                          <span className="font-medium">{formatPrice(costs.food)}</span>
+                        </div>
+                        <div className="flex items-center justify-between">
+                          <span className="flex items-center">
+                            <Map className="h-3 w-3 mr-1" />
+                            Activities:
+                          </span>
+                          <span className="font-medium">{formatPrice(costs.activities)}</span>
+                        </div>
+                        <div className="flex items-center justify-between font-medium border-t pt-1">
+                          <span>Total:</span>
+                          <span>{formatPrice(costs.total)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
+            {/* Travel Tips */}
+            {travelTips && (
+              <div className="bg-white rounded-lg shadow-md p-6 mb-6">
+                <h3 className="text-lg font-semibold text-gray-900 mb-4 flex items-center">
+                  <Info className="h-5 w-5 mr-2" />
+                  Travel Tips for {travelTips.destination}
+                </h3>
+                <div className="space-y-3">
+                  <div>
+                    <h4 className="font-medium text-gray-900 text-sm mb-2">General</h4>
+                    <ul className="text-xs text-gray-600 space-y-1">
+                      {travelTips.general.slice(0, 2).map((tip, index) => (
+                        <li key={index} className="flex items-start">
+                          <span className="text-blue-500 mr-2">•</span>
+                          {tip}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                  <div>
+                    <h4 className="font-medium text-gray-900 text-sm mb-2">Accommodation</h4>
+                    <ul className="text-xs text-gray-600 space-y-1">
+                      {travelTips.accommodation.slice(0, 2).map((tip, index) => (
+                        <li key={index} className="flex items-start">
+                          <span className="text-blue-500 mr-2">•</span>
+                          {tip}
+                        </li>
+                      ))}
+                    </ul>
+                  </div>
+                </div>
               </div>
             )}
 

@@ -1,64 +1,63 @@
-# GlobeTrotter - Travel Planning Application
+# GlobeTrotter - Enhanced Travel Planning Platform
 
-A full-stack travel planning application with user authentication, email verification, and a beautiful modern UI. Built with React, Node.js, MongoDB, and SendGrid.
+A comprehensive travel planning application with real-time data integration, intelligent pricing, and personalized trip recommendations.
 
-## 🌟 Features
+## 🚀 New Features & Improvements
 
-### Authentication & Security
-- ✅ User registration with email verification
-- ✅ Secure login/logout functionality
-- ✅ Password reset via email
-- ✅ JWT token-based authentication
-- ✅ Protected routes
-- ✅ Input validation and sanitization
+### Real-Time Data Integration
+- **Google Places API**: Enhanced place search with autocomplete
+- **Google Maps Directions**: Real-time route calculation and optimization
+- **Google Places Nearby Search**: Live attraction discovery
+- **Amadeus Flight API**: Real-time flight pricing and availability
+- **RapidAPI Hotels**: Live hotel pricing and availability
+- **Weather Integration**: Real-time weather forecasts for travel planning
+- **Caching System**: Optimized API responses with 5-minute cache
 
-### User Experience
-- ✅ Beautiful, responsive design with Tailwind CSS
-- ✅ Modern UI with smooth animations
-- ✅ Form validation with React Hook Form
-- ✅ Toast notifications for user feedback
-- ✅ Loading states and error handling
+### Enhanced Trip Planning
+- **Multi-Modal Transportation**: Flights, trains, buses with real pricing
+- **Dynamic Pricing**: Real-time cost calculations based on distance, dates, and demand
+- **Smart Route Optimization**: Google Directions API integration
+- **Attraction Discovery**: Automatic tourist attraction recommendations
+- **Weather-Aware Planning**: Weather forecasts for better trip timing
+- **Travel Tips**: Destination-specific recommendations and advice
 
-### Backend Features
-- ✅ RESTful API with Express.js
-- ✅ MongoDB Atlas integration
-- ✅ SendGrid email service
-- ✅ Cloudinary for media storage
-- ✅ Rate limiting and security headers
-- ✅ Comprehensive error handling
+### Improved User Experience
+- **Real-Time Search**: Instant place suggestions with Google Places
+- **Interactive Maps**: Route visualization and distance calculations
+- **Comprehensive Pricing**: Detailed cost breakdowns for all trip components
+- **Multiple Package Types**: Budget, Comfort, and Luxury options
+- **Responsive Design**: Mobile-friendly interface with modern UI
+- **Loading States**: Better user feedback during API calls
 
-## 🏗️ Project Structure
+## 🛠️ Technology Stack
 
-```
-GlobeTrotter/
-├── backend/                 # Backend API
-│   ├── models/             # Database models
-│   ├── routes/             # API routes
-│   ├── utils/              # Utility functions
-│   ├── config.env          # Environment variables
-│   ├── package.json        # Backend dependencies
-│   └── server.js           # Main server file
-├── frontend/               # React frontend
-│   ├── public/             # Static files
-│   ├── src/
-│   │   ├── components/     # Reusable components
-│   │   ├── contexts/       # React contexts
-│   │   ├── pages/          # Page components
-│   │   ├── App.js          # Main app component
-│   │   └── index.js        # Entry point
-│   ├── package.json        # Frontend dependencies
-│   └── tailwind.config.js  # Tailwind configuration
-└── README.md               # This file
-```
+### Backend
+- **Node.js** with Express.js
+- **MongoDB** with Mongoose
+- **JWT Authentication**
+- **Google Maps API** integration
+- **Amadeus Flight API** integration
+- **RapidAPI Hotels** integration
+- **Node-Cache** for performance optimization
+- **Axios** for HTTP requests
 
-## 🚀 Quick Start
+### Frontend
+- **React.js** with modern hooks
+- **Tailwind CSS** for styling
+- **Lucide React** for icons
+- **React Router** for navigation
+- **Axios** for API communication
+- **React Hot Toast** for notifications
 
-### Prerequisites
+## 📋 Prerequisites
+
 - Node.js (v14 or higher)
-- npm or yarn
 - MongoDB Atlas account
-- SendGrid account
-- Cloudinary account
+- Google Maps API key
+- Amadeus API credentials (optional)
+- RapidAPI key (optional)
+
+## 🔧 Installation & Setup
 
 ### 1. Clone the Repository
 ```bash
@@ -66,220 +65,182 @@ git clone <repository-url>
 cd GlobeTrotter
 ```
 
-### 2. Install All Dependencies
+### 2. Backend Setup
 ```bash
-# Install root dependencies (including concurrently)
+cd backend
 npm install
-
-# Install backend dependencies
-cd backend && npm install
-
-# Install frontend dependencies
-cd ../frontend && npm install
-```
-
-**Or use the single command:**
-```bash
-npm run install-all
 ```
 
 ### 3. Environment Configuration
-Create a `config.env` file in the backend directory with your credentials:
-
-1. Copy the example file:
-```bash
-cd backend
-cp config.env.example config.env
-```
-
-2. Update the `config.env` file with your actual credentials:
+Create/update `backend/config.env`:
 ```env
-MONGODB_URI=your_mongodb_atlas_connection_string
-PORT=5000
-JWT_SECRET=your_jwt_secret_key
-CLOUDINARY_CLOUD_NAME=your_cloudinary_cloud_name
-CLOUDINARY_API_KEY=your_cloudinary_api_key
-CLOUDINARY_API_SECRET=your_cloudinary_api_secret
-SENDGRID_API_KEY=your_sendgrid_api_key
-EMAIL_FROM=your_verified_sendgrid_email
-CLIENT_URL=http://localhost:3000
-```
+# Database Configuration
+MONGODB_URI=your_mongodb_atlas_uri
 
-**⚠️ Important:** Never commit your `config.env` file to version control. It's already added to `.gitignore` to prevent accidental commits.
+# Server Configuration
+PORT=5000
+
+# JWT Configuration
+JWT_SECRET=your_jwt_secret
+
+# Google Maps API
+GOOGLE_MAPS_API_KEY=your_google_maps_api_key
+
+# Optional: Real-time APIs
+RAPIDAPI_KEY=your_rapidapi_key
+RAPIDAPI_HOST=hotels4.p.rapidapi.com
+AMADEUS_CLIENT_ID=your_amadeus_client_id
+AMADEUS_CLIENT_SECRET=your_amadeus_client_secret
+```
 
 ### 4. Frontend Setup
-*Frontend dependencies are already installed in step 2. If you need to reinstall:*
 ```bash
 cd frontend
 npm install
 ```
 
 ### 5. Start the Application
-
-**Option 1: Run Both Servers with Single Command (Recommended)**
 ```bash
-# Install concurrently (if not already installed)
-npm install
-
-# Run both frontend and backend simultaneously
-npm run dev
-```
-
-**Option 2: Run Servers Separately**
-**Terminal 1 - Backend:**
-```bash
+# Terminal 1 - Backend
 cd backend
-npm run dev
-```
-**Terminal 2 - Frontend:**
-```bash
+npm start
+
+# Terminal 2 - Frontend
 cd frontend
 npm start
 ```
 
-The application will be available at:
-- Frontend: http://localhost:3000
-- Backend API: http://localhost:5000
+## 🌟 Key Features
 
-## 📜 Available Scripts
+### 1. Intelligent Place Search
+- Google Places API integration
+- Real-time autocomplete suggestions
+- Popular Indian cities fallback
+- Smart place validation
 
-### Root Level Scripts
-```bash
-npm run dev          # Run both frontend and backend simultaneously
-npm run server       # Run only the backend server
-npm run client       # Run only the frontend development server
-npm run install-all  # Install dependencies for all packages
-npm run build        # Build the frontend for production
-npm start            # Start the backend in production mode
-```
+### 2. Real-Time Transportation Options
+- **Flights**: Amadeus API integration with fallback pricing
+- **Trains**: Indian Railways simulation with realistic pricing
+- **Buses**: Inter-city bus options with AC/Non-AC variants
+- **Dynamic Pricing**: Based on distance, demand, and booking time
 
-### Backend Scripts
-```bash
-cd backend
-npm run dev          # Start backend in development mode with nodemon
-npm start            # Start backend in production mode
-```
+### 3. Comprehensive Hotel Integration
+- RapidAPI Hotels integration
+- Real-time availability and pricing
+- Multiple accommodation tiers
+- Amenity-based filtering
 
-### Frontend Scripts
-```bash
-cd frontend
-npm start            # Start frontend development server
-npm run build        # Build for production
-npm test             # Run tests
-```
+### 4. Smart Route Planning
+- Google Directions API integration
+- Multi-stop route optimization
+- Real-time distance and duration calculation
+- Traffic-aware routing
 
-## 📧 Email Configuration
+### 5. Attraction Discovery
+- Google Places Nearby Search
+- Tourist attraction recommendations
+- Rating-based sorting
+- Location-based filtering
 
-### SendGrid Setup
-1. Create a SendGrid account
-2. Verify your sender email address
-3. Generate an API key
-4. Update the `SENDGRID_API_KEY` and `EMAIL_FROM` in your config.env
+### 6. Weather Integration
+- 5-day weather forecasts
+- Temperature and condition data
+- Travel planning recommendations
 
-### Email Templates
-The application includes beautiful HTML email templates for:
-- Email verification
-- Password reset
-- Welcome emails
+### 7. Travel Tips & Recommendations
+- Destination-specific advice
+- Accommodation tips
+- Transportation guidance
+- Cultural insights
 
-## 🔐 Security Features
+## 📊 API Endpoints
 
-- **Password Hashing**: bcryptjs with salt rounds
-- **JWT Tokens**: Secure authentication tokens
-- **Rate Limiting**: API request throttling
-- **Input Validation**: Express-validator middleware
-- **CORS**: Configured for security
-- **Helmet**: Security headers
-- **Environment Variables**: Sensitive data protection
+### Trip Planning
+- `POST /api/trips/generate-packages` - Generate comprehensive travel packages
+- `GET /api/trips/transport-options` - Get real-time transportation options
+- `GET /api/trips/hotel-options` - Get hotel availability and pricing
+- `GET /api/trips/attractions` - Discover nearby attractions
+- `GET /api/trips/weather/:location` - Get weather forecasts
+- `GET /api/trips/travel-tips/:destination` - Get travel recommendations
 
-## 🎨 UI/UX Features
+### Place Search
+- `GET /api/trips/search-places` - Enhanced place autocomplete
+- `GET /api/trips/place-details/:placeId` - Get detailed place information
+- `GET /api/trips/directions` - Get route directions
 
-- **Responsive Design**: Works on all devices
-- **Modern UI**: Clean, professional design
-- **Smooth Animations**: CSS transitions and animations
-- **Form Validation**: Real-time validation feedback
-- **Loading States**: User-friendly loading indicators
-- **Toast Notifications**: Success/error feedback
-- **Accessibility**: ARIA labels and keyboard navigation
+## 🎯 Usage Examples
 
-## 📱 Pages & Routes
+### 1. Plan a Trip
+1. Navigate to the Plan Trip page
+2. Enter start and end locations (with real-time autocomplete)
+3. Add optional stops along the way
+4. Select travel dates and number of travelers
+5. Choose budget range and trip type
+6. Click "Search Packages" to get comprehensive recommendations
 
-### Public Pages
-- `/` - Landing page with features and CTA
-- `/signup` - User registration
-- `/login` - User authentication
-- `/verify-email` - Email verification page
-- `/forgot-password` - Password reset request
-- `/reset-password` - Password reset form
+### 2. View Real-Time Data
+- **Transportation**: See live pricing for flights, trains, and buses
+- **Accommodation**: Real-time hotel availability and rates
+- **Weather**: 5-day forecasts for better planning
+- **Attractions**: Discover nearby tourist spots
+- **Route Info**: Optimized routes with distance and duration
 
-### Protected Pages
-- `/dashboard` - User dashboard (requires authentication)
+### 3. Package Selection
+- **Budget Explorer**: Affordable options with local experiences
+- **Comfort Journey**: Mid-range packages with quality accommodations
+- **Luxury Experience**: Premium packages with exclusive features
 
-## 🔧 API Endpoints
+## 🔒 Security Features
 
-### Authentication
-- `POST /api/auth/register` - User registration
-- `POST /api/auth/login` - User login
-- `GET /api/auth/verify-email/:token` - Email verification
-- `POST /api/auth/forgot-password` - Password reset request
-- `POST /api/auth/reset-password` - Password reset
-- `POST /api/auth/resend-verification` - Resend verification email
+- JWT-based authentication
+- Rate limiting on API endpoints
+- Input validation and sanitization
+- Secure environment variable handling
+- CORS configuration
 
-### User Management
-- `GET /api/user/profile` - Get user profile
-- `PUT /api/user/profile` - Update user profile
-- `PUT /api/user/change-password` - Change password
-- `DELETE /api/user/account` - Delete account
-- `POST /api/user/logout` - User logout
+## 🚀 Performance Optimizations
 
-## 🛠️ Technologies Used
+- **API Caching**: 5-minute cache for external API responses
+- **Parallel Requests**: Concurrent API calls for faster response times
+- **Lazy Loading**: Optimized component loading
+- **Image Optimization**: Compressed travel images
+- **Database Indexing**: Optimized MongoDB queries
 
-### Backend
-- **Node.js** - Runtime environment
-- **Express.js** - Web framework
-- **MongoDB** - Database
-- **Mongoose** - ODM for MongoDB
-- **bcryptjs** - Password hashing
-- **jsonwebtoken** - JWT authentication
-- **SendGrid** - Email service
-- **Cloudinary** - Media storage
-- **Express-validator** - Input validation
-- **Helmet** - Security headers
-- **CORS** - Cross-origin resource sharing
+## 🎨 UI/UX Improvements
 
-### Frontend
-- **React** - UI library
-- **React Router** - Client-side routing
-- **React Hook Form** - Form management
-- **Axios** - HTTP client
-- **Tailwind CSS** - Utility-first CSS framework
-- **Lucide React** - Icon library
-- **React Hot Toast** - Toast notifications
+- **Modern Design**: Clean, responsive interface
+- **Interactive Elements**: Hover effects and transitions
+- **Loading States**: User feedback during API calls
+- **Error Handling**: Graceful error messages
+- **Mobile Responsive**: Works seamlessly on all devices
 
-## 🚀 Deployment
+## 🔧 Configuration Options
 
-### Backend Deployment (Heroku)
-1. Create a Heroku app
-2. Set environment variables in Heroku dashboard
-3. Deploy using Git:
-```bash
-git push heroku main
-```
+### API Keys Setup
+1. **Google Maps API**: Enable Places API, Directions API, and Geocoding API
+2. **Amadeus API**: Register for free tier access
+3. **RapidAPI**: Subscribe to Hotels API for real-time hotel data
 
-### Frontend Deployment (Vercel/Netlify)
-1. Build the frontend:
-```bash
-cd frontend
-npm run build
-```
-2. Deploy the `build` folder to your preferred platform
+### Fallback Systems
+- All external APIs have intelligent fallback mechanisms
+- Local pricing algorithms when APIs are unavailable
+- Graceful degradation for better user experience
+
+## 📈 Future Enhancements
+
+- **Real-time Booking**: Direct booking integration
+- **Payment Gateway**: Secure payment processing
+- **Social Features**: Trip sharing and reviews
+- **AI Recommendations**: Machine learning-based suggestions
+- **Multi-language Support**: Internationalization
+- **Offline Mode**: Cached data for offline access
 
 ## 🤝 Contributing
 
 1. Fork the repository
 2. Create a feature branch
 3. Make your changes
-4. Test thoroughly
+4. Add tests if applicable
 5. Submit a pull request
 
 ## 📄 License
@@ -288,20 +249,11 @@ This project is licensed under the MIT License.
 
 ## 🆘 Support
 
-If you encounter any issues or have questions:
-1. Check the documentation
-2. Search existing issues
-3. Create a new issue with detailed information
-
-## 🎯 Roadmap
-
-- [ ] Trip planning interface
-- [ ] Budget tracking features
-- [ ] Social sharing capabilities
-- [ ] Mobile app development
-- [ ] Advanced analytics
-- [ ] Multi-language support
+For support and questions:
+- Create an issue in the repository
+- Check the documentation
+- Review the API endpoints
 
 ---
 
-**Happy Traveling! 🌍✈️**
+**GlobeTrotter** - Your Ultimate Travel Planning Companion with Real-Time Data and Intelligent Recommendations! 🌍✈️🏨
