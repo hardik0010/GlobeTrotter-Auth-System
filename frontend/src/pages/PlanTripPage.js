@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { 
-  Calendar, 
-  MapPin, 
-  Search, 
-  Plus, 
-  X, 
+import {
+  Calendar,
+  MapPin,
+  Search,
+  Plus,
+  X,
   Star,
   Clock,
   Users,
@@ -17,7 +17,7 @@ import toast from 'react-hot-toast';
 const PlanTripPage = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  
+
   // Form state
   const [tripData, setTripData] = useState({
     startDate: '',
@@ -83,12 +83,12 @@ const PlanTripPage = () => {
     try {
       // Simulate API call
       await new Promise(resolve => setTimeout(resolve, 2000));
-      
+
       // Mock search results
       const mockResults = generateMockPackages();
       setSearchResults(mockResults);
       setShowSuggestions(true);
-      
+
       toast.success('Found packages for your trip!');
     } catch (error) {
       toast.error('Failed to search packages');
@@ -101,7 +101,7 @@ const PlanTripPage = () => {
   const generateMockPackages = () => {
     const route = `${tripData.startPlace} → ${tripData.stops.join(' → ')} → ${tripData.endPlace}`;
     const duration = calculateDuration(tripData.startDate, tripData.endDate);
-    
+
     return [
       {
         id: 'custom-1',
@@ -167,12 +167,12 @@ const PlanTripPage = () => {
       toast.error('Please select at least one package');
       return;
     }
-    
-    navigate('/itinerary', { 
-      state: { 
-        tripData, 
-        selectedPackages 
-      } 
+
+    navigate('/itinerary', {
+      state: {
+        tripData,
+        selectedPackages
+      }
     });
   };
 
@@ -192,7 +192,7 @@ const PlanTripPage = () => {
           <div className="lg:col-span-2">
             <div className="bg-white rounded-lg shadow-md p-6 mb-8">
               <h2 className="text-xl font-semibold text-gray-900 mb-6">Trip Details</h2>
-              
+
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 {/* Start Date */}
                 <div>
@@ -206,8 +206,8 @@ const PlanTripPage = () => {
                       onChange={(e) => handleInputChange('startDate', e.target.value)}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       min={new Date().toISOString().split('T')[0]}
+                      id="startDate"
                     />
-                    <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   </div>
                 </div>
 
@@ -223,8 +223,8 @@ const PlanTripPage = () => {
                       onChange={(e) => handleInputChange('endDate', e.target.value)}
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                       min={tripData.startDate || new Date().toISOString().split('T')[0]}
+                      id="endDate"
                     />
-                    <Calendar className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
                   </div>
                 </div>
 
@@ -278,7 +278,7 @@ const PlanTripPage = () => {
                     Add Stop
                   </button>
                 </div>
-                
+
                 {tripData.stops.map((stop, index) => (
                   <div key={index} className="flex items-center space-x-3 mb-3">
                     <div className="flex-1 relative">
