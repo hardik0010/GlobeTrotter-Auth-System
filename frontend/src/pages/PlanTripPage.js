@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import axios from 'axios';
 import {
@@ -67,11 +67,15 @@ const PlanTripPage = () => {
   const [showEndSuggestions, setShowEndSuggestions] = useState(false);
   const [showStopSuggestions, setShowStopSuggestions] = useState(false);
   const [activeStopIndex, setActiveStopIndex] = useState(-1);
+  const [isSearching, setIsSearching] = useState(false);
 
-  // Refs for autocomplete
+  // Refs for autocomplete and debouncing
   const startInputRef = useRef(null);
   const endInputRef = useRef(null);
   const stopInputRefs = useRef([]);
+  const startSearchTimeoutRef = useRef(null);
+  const endSearchTimeoutRef = useRef(null);
+  const stopSearchTimeoutRef = useRef(null);
 
   // Date validation
   const validateDates = () => {
@@ -143,24 +147,79 @@ const PlanTripPage = () => {
       [field]: value
     }));
 
-    // Clear suggestions when user starts typing
+    // Trigger autocomplete search for location fields
     if (field === 'startPlace') {
-      setShowStartSuggestions(false);
+      if (startSearchTimeoutRef.current) {
+        clearTimeout(startSearchTimeoutRef.current);
+      }
+      startSearchTimeoutRef.current = setTimeout(() => {
+        searchPlaces(value, setStartSuggestions, setShowStartSuggestions, startSearchTimeoutRef);
+      }, 300);
     } else if (field === 'endPlace') {
-      setShowEndSuggestions(false);
+      if (endSearchTimeoutRef.current) {
+        clearTimeout(endSearchTimeoutRef.current);
+      }
+      endSearchTimeoutRef.current = setTimeout(() => {
+        searchPlaces(value, setEndSuggestions, setShowEndSuggestions, endSearchTimeoutRef);
+      }, 300);
     }
   };
 
-  // Search places for autocomplete using our backend API
-  const searchPlaces = async (query, setSuggestions, setShowSuggestions) => {
-    if (!query || query.length < 2) {
+  // Enhanced search places function with Google Places API and debouncing
+  const searchPlaces = useCallback(async (query, setSuggestions, setShowSuggestions, timeoutRef) => {
+    if (!query || query.length < 1) {
       setSuggestions([]);
       setShowSuggestions(false);
       return;
     }
 
+    if (timeoutRef.current) {
+      clearTimeout(timeoutRef.current);
+    }
+
+    timeoutRef.current = setTimeout(async () => {
+      setIsSearching(true);
+      try {
+        // Try Google Places API first if available
+        if (window.google && window.google.maps && window.google.maps.places) {
+          const service = new window.google.maps.places.AutocompleteService();
+          service.getPlacePredictions({
+            input: query,
+            types: ['(cities)', 'geocode'],
+            componentRestrictions: { country: 'in' },
+            language: 'en'
+          }, (predictions, status) => {
+            if (status === window.google.maps.places.PlacesServiceStatus.OK && predictions) {
+              const places = predictions.map(prediction => ({
+                place_id: prediction.place_id,
+                description: prediction.description,
+                main_text: prediction.structured_formatting?.main_text || '',
+                secondary_text: prediction.structured_formatting?.secondary_text || '',
+                types: prediction.types || []
+              }));
+              setSuggestions(places);
+              setShowSuggestions(true);
+            } else {
+              // Fallback to backend API
+              searchPlacesBackend(query, setSuggestions, setShowSuggestions);
+            }
+          });
+        } else {
+          // Fallback to backend API
+          searchPlacesBackend(query, setSuggestions, setShowSuggestions);
+        }
+      } catch (error) {
+        console.error('Error searching places:', error);
+        searchPlacesBackend(query, setSuggestions, setShowSuggestions);
+      } finally {
+        setIsSearching(false);
+      }
+    }, 300);
+  }, []);
+
+  // Backend fallback for place search
+  const searchPlacesBackend = async (query, setSuggestions, setShowSuggestions) => {
     try {
-      // Use backend API for place search
       const response = await axios.get(`/api/trips/search-places?query=${encodeURIComponent(query)}`);
       setSuggestions(response.data.places);
       setShowSuggestions(true);
@@ -173,7 +232,11 @@ const PlanTripPage = () => {
 
   // Handle place selection
   const selectPlace = (place, field, setSuggestions, setShowSuggestions) => {
-    handleInputChange(field, place.description);
+    console.log('Selecting place:', place, 'for field:', field);
+    setTripData(prev => ({
+      ...prev,
+      [field]: place.description
+    }));
     setSuggestions([]);
     setShowSuggestions(false);
   };
@@ -207,18 +270,19 @@ const PlanTripPage = () => {
       stops: prev.stops.map((stop, i) => i === index ? value : stop)
     }));
 
-    // Search for suggestions
-    if (value.length >= 2) {
-      searchPlaces(value, setStopSuggestions, setShowStopSuggestions);
-      setActiveStopIndex(index);
-    } else {
-      setStopSuggestions([]);
-      setShowStopSuggestions(false);
+    // Search for suggestions with debouncing
+    if (stopSearchTimeoutRef.current) {
+      clearTimeout(stopSearchTimeoutRef.current);
     }
+    stopSearchTimeoutRef.current = setTimeout(() => {
+      searchPlaces(value, setStopSuggestions, setShowStopSuggestions, stopSearchTimeoutRef);
+    }, 300);
+    setActiveStopIndex(index);
   };
 
   // Select stop
   const selectStop = (place, index) => {
+    console.log('Selecting stop:', place, 'for index:', index);
     setTripData(prev => ({
       ...prev,
       stops: prev.stops.map((stop, i) => i === index ? place.description : stop)
@@ -495,32 +559,44 @@ const PlanTripPage = () => {
                       ref={startInputRef}
                       type="text"
                       value={tripData.startPlace}
-                      onChange={(e) => {
-                        handleInputChange('startPlace', e.target.value);
-                        searchPlaces(e.target.value, setStartSuggestions, setShowStartSuggestions);
-                      }}
+                      onChange={(e) => handleInputChange('startPlace', e.target.value)}
                       onFocus={() => {
-                        if (tripData.startPlace.length >= 2) {
+                        if (tripData.startPlace.length >= 1) {
                           setShowStartSuggestions(true);
                         }
                       }}
                       placeholder="e.g., Mumbai, Maharashtra"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
-                    <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    {isSearching ? (
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+                      </div>
+                    ) : (
+                      <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    )}
                   </div>
 
                   {/* Start Place Suggestions */}
                   {showStartSuggestions && startSuggestions.length > 0 && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    <div className="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                       {startSuggestions.map((place, index) => (
                         <div
                           key={index}
-                          onClick={() => selectPlace(place, 'startPlace', setStartSuggestions, setShowStartSuggestions)}
-                          className="px-4 py-3 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            selectPlace(place, 'startPlace', setStartSuggestions, setShowStartSuggestions);
+                          }}
+                          className="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors duration-150 group"
                         >
-                          <div className="font-medium text-gray-900">{place.main_text}</div>
-                          <div className="text-sm text-gray-600">{place.secondary_text}</div>
+                          <div className="flex items-center">
+                            <MapPin className="h-4 w-4 text-gray-400 mr-2 group-hover:text-blue-500" />
+                            <div className="flex-1">
+                              <div className="font-medium text-gray-900">{place.main_text}</div>
+                              <div className="text-sm text-gray-600">{place.secondary_text}</div>
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </div>
@@ -537,32 +613,44 @@ const PlanTripPage = () => {
                       ref={endInputRef}
                       type="text"
                       value={tripData.endPlace}
-                      onChange={(e) => {
-                        handleInputChange('endPlace', e.target.value);
-                        searchPlaces(e.target.value, setEndSuggestions, setShowEndSuggestions);
-                      }}
+                      onChange={(e) => handleInputChange('endPlace', e.target.value)}
                       onFocus={() => {
-                        if (tripData.endPlace.length >= 2) {
+                        if (tripData.endPlace.length >= 1) {
                           setShowEndSuggestions(true);
                         }
                       }}
                       placeholder="e.g., Delhi, India"
                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
                     />
-                    <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    {isSearching ? (
+                      <div className="absolute right-3 top-1/2 transform -translate-y-1/2">
+                        <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-blue-500"></div>
+                      </div>
+                    ) : (
+                      <MapPin className="absolute right-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+                    )}
                   </div>
 
                   {/* End Place Suggestions */}
                   {showEndSuggestions && endSuggestions.length > 0 && (
-                    <div className="absolute z-10 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
+                    <div className="absolute z-20 w-full mt-1 bg-white border border-gray-300 rounded-lg shadow-lg max-h-60 overflow-y-auto">
                       {endSuggestions.map((place, index) => (
                         <div
                           key={index}
-                          onClick={() => selectPlace(place, 'endPlace', setEndSuggestions, setShowEndSuggestions)}
-                          className="px-4 py-3 hover:bg-gray-100 cursor-pointer border-b border-gray-100 last:border-b-0"
+                          onClick={(e) => {
+                            e.preventDefault();
+                            e.stopPropagation();
+                            selectPlace(place, 'endPlace', setEndSuggestions, setShowEndSuggestions);
+                          }}
+                          className="px-4 py-3 hover:bg-blue-50 cursor-pointer border-b border-gray-100 last:border-b-0 transition-colors duration-150 group"
                         >
-                          <div className="font-medium text-gray-900">{place.main_text}</div>
-                          <div className="text-sm text-gray-600">{place.secondary_text}</div>
+                          <div className="flex items-center">
+                            <MapPin className="h-4 w-4 text-gray-400 mr-2 group-hover:text-blue-500" />
+                            <div className="flex-1">
+                              <div className="font-medium text-gray-900">{place.main_text}</div>
+                              <div className="text-sm text-gray-600">{place.secondary_text}</div>
+                            </div>
+                          </div>
                         </div>
                       ))}
                     </div>

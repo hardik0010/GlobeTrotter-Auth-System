@@ -2,7 +2,11 @@ const express = require('express');
 const router = express.Router();
 const axios = require('axios');
 const travelService = require('../utils/travelService');
+const { searchCities } = require('../data/indianCities');
 require('dotenv').config({ path: './config.env' });
+
+// Google Maps API configuration
+const GOOGLE_MAPS_API_KEY = process.env.GOOGLE_MAPS_API_KEY;
 
 // Helper function to get estimated directions
 function getEstimatedDirections(origin, destination, waypoints) {
@@ -43,58 +47,69 @@ function getEstimatedDirections(origin, destination, waypoints) {
   };
 }
 
-// Search for places (autocomplete) - Using fallback data
+// Search for places (autocomplete) - Enhanced with Google Places API
 router.get('/search-places', async (req, res) => {
   try {
     const { query } = req.query;
-
-    if (!query || query.length < 2) {
+    
+    if (!query || query.length < 1) {
       return res.json({ places: [] });
     }
 
-    // Fallback to popular Indian cities
-    const popularCities = [
-      'Mumbai, Maharashtra, India',
-      'Delhi, India',
-      'Bangalore, Karnataka, India',
-      'Hyderabad, Telangana, India',
-      'Chennai, Tamil Nadu, India',
-      'Kolkata, West Bengal, India',
-      'Pune, Maharashtra, India',
-      'Ahmedabad, Gujarat, India',
-      'Surat, Gujarat, India',
-      'Jaipur, Rajasthan, India',
-      'Lucknow, Uttar Pradesh, India',
-      'Kanpur, Uttar Pradesh, India',
-      'Nagpur, Maharashtra, India',
-      'Indore, Madhya Pradesh, India',
-      'Thane, Maharashtra, India',
-      'Bhopal, Madhya Pradesh, India',
-      'Visakhapatnam, Andhra Pradesh, India',
-      'Pimpri-Chinchwad, Maharashtra, India',
-      'Patna, Bihar, India',
-      'Vadodara, Gujarat, India',
-      'Agra, Uttar Pradesh, India',
-      'Varanasi, Uttar Pradesh, India',
-      'Srinagar, Jammu and Kashmir, India',
-      'Shimla, Himachal Pradesh, India',
-      'Manali, Himachal Pradesh, India',
-      'Goa, India',
-      'Kochi, Kerala, India',
-      'Mysore, Karnataka, India',
-      'Ooty, Tamil Nadu, India',
-      'Darjeeling, West Bengal, India'
-    ];
+    try {
+      // Try Google Places API first
+      if (GOOGLE_MAPS_API_KEY) {
+        const response = await axios.get(
+          `https://maps.googleapis.com/maps/api/place/autocomplete/json`,
+          {
+            params: {
+              input: query,
+              key: GOOGLE_MAPS_API_KEY,
+              types: 'geocode',
+              components: 'country:in',
+              language: 'en'
+            }
+          }
+        );
 
-    const filteredCities = popularCities.filter(city =>
-      city.toLowerCase().includes(query.toLowerCase())
-    );
+        if (response.data.predictions && response.data.predictions.length > 0) {
+          const places = response.data.predictions.map(prediction => ({
+            place_id: prediction.place_id,
+            description: prediction.description,
+            main_text: prediction.structured_formatting?.main_text || '',
+            secondary_text: prediction.structured_formatting?.secondary_text || '',
+            types: prediction.types || []
+          }));
+          return res.json({ places });
+        }
+      }
+    } catch (error) {
+      console.log('Google Places API failed, using fallback:', error.message);
+    }
 
-    const places = filteredCities.map(city => ({
-      place_id: city.replace(/\s+/g, '_').toLowerCase(),
-      description: city,
-      main_text: city.split(',')[0],
-      secondary_text: city.split(',').slice(1).join(',').trim(),
+    // Use comprehensive Indian cities data for fallback
+    const matchedCities = searchCities(query);
+    
+    // Sort by relevance (exact matches first, then partial matches)
+    const sortedCities = matchedCities.sort((a, b) => {
+      const aCityLower = a.city.toLowerCase();
+      const bCityLower = b.city.toLowerCase();
+      const queryLower = query.toLowerCase();
+      
+      const aStartsWith = aCityLower.startsWith(queryLower);
+      const bStartsWith = bCityLower.startsWith(queryLower);
+      
+      if (aStartsWith && !bStartsWith) return -1;
+      if (!aStartsWith && bStartsWith) return 1;
+      
+      return aCityLower.localeCompare(bCityLower);
+    });
+
+    const places = sortedCities.slice(0, 25).map(city => ({
+      place_id: city.fullName.replace(/\s+/g, '_').toLowerCase(),
+      description: city.fullName,
+      main_text: city.city,
+      secondary_text: `${city.state}, India`,
       types: ['locality', 'political']
     }));
 
