@@ -300,6 +300,7 @@ const PlanTripPage = () => {
 
     setIsLoading(true);
     try {
+      console.log("\n\n\n\n---------------------")
       // Generate itinerary using Gemini + Foursquare
       const itineraryResponse = await axios.post('/api/itinerary/generate', {
         startPlace: tripData.startPlace,
@@ -310,13 +311,28 @@ const PlanTripPage = () => {
       });
 
       const result = itineraryResponse.data;
-      setItinerary(result.itinerary);
+
+      // Check if the response has an error
+      if (result.error) {
+        throw new Error(result.message || 'Failed to generate itinerary');
+      }
+
+      // Ensure trip is always an array to prevent undefined errors
+      setItinerary(result.trip || []);
       setShowItinerary(true);
 
-      toast.success(`Generated ${result.itinerary.length} day itinerary for your trip!`);
+      toast.success(`Generated ${result.totalDays || 0} day itinerary for your trip!`);
     } catch (error) {
       console.error('Error generating itinerary:', error);
-      toast.error('Failed to generate itinerary');
+
+      // Show more specific error messages
+      if (error.response?.data?.message) {
+        toast.error(error.response.data.message);
+      } else if (error.message) {
+        toast.error(error.message);
+      } else {
+        toast.error('Failed to generate itinerary. Please check your API configuration.');
+      }
     } finally {
       setIsLoading(false);
     }
@@ -437,37 +453,37 @@ const PlanTripPage = () => {
               <h2 className="text-xl font-semibold text-gray-900 mb-6">Trip Details</h2>
 
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                 {/* Start Date */}
-                 <div>
-                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                     Start Date
-                   </label>
-                   <div className="relative">
-                     <input
-                       type="date"
-                       value={tripData.startDate}
-                       onChange={(e) => handleInputChange('startDate', e.target.value)}
-                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                       min={new Date().toISOString().split('T')[0]}
-                     />
-                   </div>
-                 </div>
+                {/* Start Date */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    Start Date
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="date"
+                      value={tripData.startDate}
+                      onChange={(e) => handleInputChange('startDate', e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      min={new Date().toISOString().split('T')[0]}
+                    />
+                  </div>
+                </div>
 
-                 {/* End Date */}
-                 <div>
-                   <label className="block text-sm font-medium text-gray-700 mb-2">
-                     End Date
-                   </label>
-                   <div className="relative">
-                     <input
-                       type="date"
-                       value={tripData.endDate}
-                       onChange={(e) => handleInputChange('endDate', e.target.value)}
-                       className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-                       min={tripData.startDate || new Date().toISOString().split('T')[0]}
-                     />
-                   </div>
-                 </div>
+                {/* End Date */}
+                <div>
+                  <label className="block text-sm font-medium text-gray-700 mb-2">
+                    End Date
+                  </label>
+                  <div className="relative">
+                    <input
+                      type="date"
+                      value={tripData.endDate}
+                      onChange={(e) => handleInputChange('endDate', e.target.value)}
+                      className="w-full px-4 py-3 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+                      min={tripData.startDate || new Date().toISOString().split('T')[0]}
+                    />
+                  </div>
+                </div>
 
                 {/* Start Place */}
                 <div className="relative">
@@ -937,75 +953,82 @@ const PlanTripPage = () => {
             )}
 
             {/* Generated Itinerary */}
-            {showItinerary && itinerary.length > 0 && (
+            {showItinerary && (
               <div className="bg-white rounded-lg shadow-md p-6 mb-8">
                 <h2 className="text-xl font-semibold text-gray-900 mb-6 flex items-center">
                   <Map className="h-6 w-6 mr-2" />
                   Your Generated Itinerary
                 </h2>
-                <div className="space-y-6">
-                  {itinerary.map((day, dayIndex) => (
-                    <div key={dayIndex} className="border border-gray-200 rounded-lg p-4">
-                      <div className="flex items-center justify-between mb-4">
-                        <h3 className="text-lg font-semibold text-gray-900">
-                          Day {day.day}: {day.city}
-                        </h3>
-                        {day.date && (
-                          <span className="text-sm text-gray-500">
-                            {new Date(day.date).toLocaleDateString('en-US', { 
-                              weekday: 'long', 
-                              year: 'numeric', 
-                              month: 'long', 
-                              day: 'numeric' 
-                            })}
-                          </span>
-                        )}
-                      </div>
-                      <div className="space-y-4">
-                        {day.activities.map((activity, activityIndex) => (
-                          <div key={activityIndex} className="flex items-start space-x-4 p-3 bg-gray-50 rounded-lg">
-                            {activity.imageUrl && (
-                              <img 
-                                src={activity.imageUrl} 
-                                alt={activity.name}
-                                className="w-16 h-16 object-cover rounded-lg"
-                                onError={(e) => {
-                                  e.target.style.display = 'none';
-                                }}
-                              />
-                            )}
-                            <div className="flex-1">
-                              <div className="flex items-center justify-between mb-2">
-                                <h4 className="font-medium text-gray-900">{activity.name}</h4>
-                                {activity.rating && (
-                                  <div className="flex items-center">
-                                    <span className="text-yellow-500">★</span>
-                                    <span className="text-sm text-gray-600 ml-1">{activity.rating}</span>
-                                  </div>
+                {itinerary && itinerary.length > 0 ? (
+                  <div className="space-y-6">
+                    {itinerary.map((day, dayIndex) => (
+                      <div key={dayIndex} className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex items-center justify-between mb-4">
+                          <h3 className="text-lg font-semibold text-gray-900">
+                            Day {day.day}: {day.city}
+                          </h3>
+                          {day.date && (
+                            <span className="text-sm text-gray-500">
+                              {new Date(day.date).toLocaleDateString('en-US', {
+                                weekday: 'long',
+                                year: 'numeric',
+                                month: 'long',
+                                day: 'numeric'
+                              })}
+                            </span>
+                          )}
+                        </div>
+                        <div className="space-y-4">
+                          {day.activities.map((activity, activityIndex) => (
+                            <div key={activityIndex} className="flex items-start space-x-4 p-3 bg-gray-50 rounded-lg">
+                              {activity.imageUrl && (
+                                <img
+                                  src={activity.imageUrl}
+                                  alt={activity.name}
+                                  className="w-16 h-16 object-cover rounded-lg"
+                                  onError={(e) => {
+                                    e.target.style.display = 'none';
+                                  }}
+                                />
+                              )}
+                              <div className="flex-1">
+                                <div className="flex items-center justify-between mb-2">
+                                  <h4 className="font-medium text-gray-900">{activity.name}</h4>
+                                  {activity.rating && (
+                                    <div className="flex items-center">
+                                      <span className="text-yellow-500">★</span>
+                                      <span className="text-sm text-gray-600 ml-1">{activity.rating}</span>
+                                    </div>
+                                  )}
+                                </div>
+                                {activity.time && (
+                                  <p className="text-sm text-gray-600 mb-1">
+                                    <Clock className="h-3 w-3 inline mr-1" />
+                                    {activity.time}
+                                  </p>
+                                )}
+                                {activity.description && (
+                                  <p className="text-sm text-gray-700 mb-2">{activity.description}</p>
+                                )}
+                                {activity.cost && (
+                                  <p className="text-sm font-medium text-green-600">
+                                    <DollarSign className="h-3 w-3 inline mr-1" />
+                                    {activity.cost}
+                                  </p>
                                 )}
                               </div>
-                              {activity.time && (
-                                <p className="text-sm text-gray-600 mb-1">
-                                  <Clock className="h-3 w-3 inline mr-1" />
-                                  {activity.time}
-                                </p>
-                              )}
-                              {activity.description && (
-                                <p className="text-sm text-gray-700 mb-2">{activity.description}</p>
-                              )}
-                              {activity.cost && (
-                                <p className="text-sm font-medium text-green-600">
-                                  <DollarSign className="h-3 w-3 inline mr-1" />
-                                  {activity.cost}
-                                </p>
-                              )}
                             </div>
-                          </div>
-                        ))}
+                          ))}
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                </div>
+                    ))}
+                  </div>
+                ) : (
+                  <div className="text-center py-8">
+                    <Map className="h-12 w-12 text-gray-400 mx-auto mb-4" />
+                    <p className="text-gray-500">No itinerary data available. Please try generating again.</p>
+                  </div>
+                )}
               </div>
             )}
           </div>

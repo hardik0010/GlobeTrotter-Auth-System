@@ -16,7 +16,7 @@ function getEstimatedDirections(origin, destination, waypoints) {
 
   const originCity = origin.split(',')[0].trim();
   const destCity = destination.split(',')[0].trim();
-  
+
   let distance = 1000; // Default distance
   if (cityDistances[originCity] && cityDistances[originCity][destCity]) {
     distance = cityDistances[originCity][destCity];
@@ -43,16 +43,14 @@ function getEstimatedDirections(origin, destination, waypoints) {
   };
 }
 
-// Search for places (autocomplete) - Enhanced with Google Places API
+// Search for places (autocomplete) - Using fallback data
 router.get('/search-places', async (req, res) => {
   try {
     const { query } = req.query;
-    
+
     if (!query || query.length < 2) {
       return res.json({ places: [] });
     }
-
-    // Use fallback to popular Indian cities
 
     // Fallback to popular Indian cities
     const popularCities = [
@@ -88,7 +86,7 @@ router.get('/search-places', async (req, res) => {
       'Darjeeling, West Bengal, India'
     ];
 
-    const filteredCities = popularCities.filter(city => 
+    const filteredCities = popularCities.filter(city =>
       city.toLowerCase().includes(query.toLowerCase())
     );
 
@@ -111,7 +109,7 @@ router.get('/search-places', async (req, res) => {
 router.get('/place-details/:placeId', async (req, res) => {
   try {
     const { placeId } = req.params;
-    
+
     if (placeId.includes('_') && !placeId.includes('ChI')) {
       // This is a fallback place ID, return basic info
       const cityName = placeId.replace(/_/g, ' ');
@@ -124,8 +122,8 @@ router.get('/place-details/:placeId', async (req, res) => {
         place_id: placeId
       });
     }
-    
-    // Return basic place information without Google API
+
+    // Return basic place information
     res.json({
       name: placeId,
       address: placeId,
@@ -144,12 +142,12 @@ router.get('/place-details/:placeId', async (req, res) => {
 router.get('/directions', async (req, res) => {
   try {
     const { origin, destination, waypoints } = req.query;
-    
+
     if (!origin || !destination) {
       return res.status(400).json({ message: 'Origin and destination are required' });
     }
 
-    // Use estimated directions instead of Google Maps API
+    // Use estimated directions
     const estimatedData = getEstimatedDirections(origin, destination, waypoints);
     return res.json({
       ...estimatedData,
@@ -157,7 +155,7 @@ router.get('/directions', async (req, res) => {
     });
   } catch (error) {
     console.error('Error getting directions:', error.response?.data || error.message);
-    
+
     // Return fallback data instead of error - always return 200 status
     const estimatedData = getEstimatedDirections(origin, destination, waypoints);
     return res.json({
@@ -171,7 +169,7 @@ router.get('/directions', async (req, res) => {
 router.get('/attractions', async (req, res) => {
   try {
     const { locations, radius = 50000 } = req.query;
-    
+
     if (!locations) {
       return res.status(400).json({ message: 'Locations are required' });
     }
@@ -189,7 +187,7 @@ router.get('/attractions', async (req, res) => {
     }
 
     // Remove duplicates and sort by rating
-    const uniqueAttractions = allAttractions.filter((attraction, index, self) => 
+    const uniqueAttractions = allAttractions.filter((attraction, index, self) =>
       index === self.findIndex(a => a.id === attraction.id)
     ).sort((a, b) => b.rating - a.rating);
 
@@ -204,7 +202,7 @@ router.get('/attractions', async (req, res) => {
 router.get('/transport-options', async (req, res) => {
   try {
     const { origin, destination, date, travelers = 1 } = req.query;
-    
+
     if (!origin || !destination || !date) {
       return res.status(400).json({ message: 'Origin, destination, and date are required' });
     }
@@ -235,13 +233,13 @@ router.get('/transport-options', async (req, res) => {
 router.get('/hotel-options', async (req, res) => {
   try {
     const { location, checkIn, checkOut, adults = 1, rooms = 1 } = req.query;
-    
+
     if (!location || !checkIn || !checkOut) {
       return res.status(400).json({ message: 'Location, check-in, and check-out dates are required' });
     }
 
     const hotels = await travelService.getHotelPrices(location, checkIn, checkOut, adults, rooms);
-    
+
     res.json({
       hotels,
       summary: {
@@ -270,13 +268,13 @@ router.post('/generate-packages', async (req, res) => {
 
     // Use the comprehensive travel service
     const result = await travelService.getTravelPackage(
-      startPlace, 
-      endPlace, 
-      stops || [], 
-      startDate, 
-      endDate, 
-      travelers || 1, 
-      budget, 
+      startPlace,
+      endPlace,
+      stops || [],
+      startDate,
+      endDate,
+      travelers || 1,
+      budget,
       tripType || 'leisure'
     );
 
@@ -291,7 +289,7 @@ router.post('/generate-packages', async (req, res) => {
 router.get('/weather/:location', async (req, res) => {
   try {
     const { location } = req.params;
-    
+
     // This would integrate with a weather API like OpenWeatherMap
     // For now, returning mock data
     const weatherData = {
@@ -321,7 +319,7 @@ router.get('/weather/:location', async (req, res) => {
 router.get('/travel-tips/:destination', async (req, res) => {
   try {
     const { destination } = req.params;
-    
+
     // Mock travel tips - in production, this would come from a content API
     const tips = {
       destination,

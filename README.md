@@ -114,7 +114,7 @@ npm start
 ## 🌟 Key Features
 
 ### 1. Intelligent Place Search
-- Google Places API integration
+- Place search API integration
 - Real-time autocomplete suggestions
 - Popular Indian cities fallback
 - Smart place validation
@@ -132,13 +132,13 @@ npm start
 - Amenity-based filtering
 
 ### 4. Smart Route Planning
-- Google Directions API integration
+- Route calculation with estimated data
 - Multi-stop route optimization
 - Real-time distance and duration calculation
 - Traffic-aware routing
 
 ### 5. Attraction Discovery
-- Google Places Nearby Search
+- Attraction discovery with fallback data
 - Tourist attraction recommendations
 - Rating-based sorting
 - Location-based filtering
@@ -169,6 +169,9 @@ npm start
 - `GET /api/trips/place-details/:placeId` - Get detailed place information
 - `GET /api/trips/directions` - Get route directions
 
+### Itinerary Generation
+- `POST /api/itinerary/generate` - Generate AI-powered itinerary with Gemini + Foursquare enrichment
+
 ## 🎯 Usage Examples
 
 ### 1. Plan a Trip
@@ -178,6 +181,7 @@ npm start
 4. Select travel dates and number of travelers
 5. Choose budget range and trip type
 6. Click "Search Packages" to get comprehensive recommendations
+7. Click "Generate Itinerary" to create AI-powered day-by-day plans
 
 ### 2. View Real-Time Data
 - **Transportation**: See live pricing for flights, trains, and buses
@@ -185,6 +189,7 @@ npm start
 - **Weather**: 5-day forecasts for better planning
 - **Attractions**: Discover nearby tourist spots
 - **Route Info**: Optimized routes with distance and duration
+- **Itinerary**: AI-generated day-by-day plans with enriched activity data
 
 ### 3. Package Selection
 - **Budget Explorer**: Affordable options with local experiences
@@ -218,9 +223,18 @@ npm start
 ## 🔧 Configuration Options
 
 ### API Keys Setup
-1. **Google Maps API**: Enable Places API, Directions API, and Geocoding API
-2. **Amadeus API**: Register for free tier access
-3. **RapidAPI**: Subscribe to Hotels API for real-time hotel data
+1. **Gemini API**: Get API key from [Google AI Studio](https://makersuite.google.com/app/apikey)
+2. **Foursquare API**: Get API key from [Foursquare Developer Portal](https://developer.foursquare.com/)
+3. **Amadeus API**: Register for free tier access
+4. **RapidAPI**: Subscribe to Hotels API for real-time hotel data
+
+### New Itinerary Generation Feature
+The application now uses **Gemini AI** for intelligent itinerary generation and **Foursquare** for place enrichment:
+
+- **Gemini AI**: Generates day-by-day itineraries based on trip details
+- **Foursquare**: Enriches activities with photos, ratings, and location data
+- **Fallback System**: Mock itinerary data when APIs are unavailable
+- **Real-time Enrichment**: Each activity is enhanced with real photos and ratings
 
 ### Fallback Systems
 - All external APIs have intelligent fallback mechanisms

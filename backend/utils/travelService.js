@@ -24,7 +24,7 @@ class TravelService {
     }
 
     try {
-      const response = await axios.post('https://test.api.amadeus.com/v1/security/oauth2/token', 
+      const response = await axios.post('https://test.api.amadeus.com/v1/security/oauth2/token',
         'grant_type=client_credentials&client_id=' + AMADEUS_CLIENT_ID + '&client_secret=' + AMADEUS_CLIENT_SECRET,
         {
           headers: {
@@ -93,7 +93,7 @@ class TravelService {
     const basePrice = 5000; // Base price in INR
     const distanceMultiplier = this.calculateDistanceMultiplier(origin, destination);
     const dateMultiplier = this.calculateDateMultiplier(departureDate);
-    
+
     return [
       {
         id: 'flight-1',
@@ -140,7 +140,7 @@ class TravelService {
 
         if (response.data.suggestions && response.data.suggestions.length > 0) {
           const destinationId = response.data.suggestions[0].entities[0].destinationId;
-          
+
           const hotelsResponse = await axios.get('https://hotels4.p.rapidapi.com/properties/v2/list', {
             headers: {
               'X-RapidAPI-Key': RAPIDAPI_KEY,
@@ -182,7 +182,7 @@ class TravelService {
   getFallbackHotelPrices(location, checkIn, checkOut, adults, rooms) {
     const basePrice = 2000; // Base price per night
     const nights = Math.ceil((new Date(checkOut) - new Date(checkIn)) / (1000 * 60 * 60 * 24));
-    
+
     return [
       {
         id: 'hotel-1',
@@ -236,7 +236,7 @@ class TravelService {
   getFallbackTrainPrices(origin, destination, date) {
     const basePrice = 800; // Base price in INR
     const distanceMultiplier = this.calculateDistanceMultiplier(origin, destination);
-    
+
     return [
       {
         id: 'train-1',
@@ -284,7 +284,7 @@ class TravelService {
   getFallbackBusPrices(origin, destination, date) {
     const basePrice = 300; // Base price in INR
     const distanceMultiplier = this.calculateDistanceMultiplier(origin, destination);
-    
+
     return [
       {
         id: 'bus-1',
@@ -315,7 +315,7 @@ class TravelService {
     const cached = cache.get(cacheKey);
     if (cached) return cached;
 
-    // Use fallback attractions since Google API is removed
+    // Use fallback attractions
     return this.getFallbackAttractions(location);
   }
 
@@ -370,11 +370,11 @@ class TravelService {
 
     const originCity = origin.split(',')[0];
     const destCity = destination.split(',')[0];
-    
+
     if (distances[originCity] && distances[originCity][destCity]) {
       return distances[originCity][destCity];
     }
-    
+
     return 2.0; // Default multiplier
   }
 
@@ -383,7 +383,7 @@ class TravelService {
     const targetDate = new Date(date);
     const today = new Date();
     const daysUntil = Math.ceil((targetDate - today) / (1000 * 60 * 60 * 24));
-    
+
     if (daysUntil <= 7) return 1.5; // Last minute booking
     if (daysUntil <= 30) return 1.2; // Short notice
     if (daysUntil <= 90) return 1.0; // Normal booking
@@ -402,23 +402,23 @@ class TravelService {
 
       // Get hotel prices for all locations
       const allLocations = [origin, ...stops, destination];
-      const hotelPromises = allLocations.map(location => 
+      const hotelPromises = allLocations.map(location =>
         this.getHotelPrices(location, startDate, endDate, travelers)
       );
       const hotels = await Promise.all(hotelPromises);
 
       // Get attractions for all locations
-      const attractionPromises = allLocations.map(location => 
+      const attractionPromises = allLocations.map(location =>
         this.getAttractions(location)
       );
       const attractions = await Promise.all(attractionPromises);
 
       // Calculate optimal route and pricing
       const routeInfo = await this.calculateRoute(origin, destination, stops);
-      
+
       // Generate packages based on budget and preferences
       const packages = this.generatePackages(
-        flights, trains, buses, hotels, attractions, 
+        flights, trains, buses, hotels, attractions,
         routeInfo, startDate, endDate, travelers, budget, tripType
       );
 
@@ -441,13 +441,13 @@ class TravelService {
     }
   }
 
-  // Calculate optimal route using Google Directions API
+  // Calculate optimal route using estimated data
   async calculateRoute(origin, destination, stops) {
-    // Return estimated route data since Google API is removed
+    // Return estimated route data
     const waypoints = stops.filter(stop => stop.trim() !== '');
     const estimatedDistance = 1000; // Default 1000 km
     const estimatedDuration = '10h 0m';
-    
+
     return {
       distance: `${estimatedDistance} km`,
       duration: estimatedDuration,
@@ -467,14 +467,14 @@ class TravelService {
   // Generate travel packages
   generatePackages(flights, trains, buses, hotels, attractions, routeInfo, startDate, endDate, travelers, budget, tripType) {
     const duration = Math.ceil((new Date(endDate) - new Date(startDate)) / (1000 * 60 * 60 * 24));
-    
+
     // Ensure we have valid data arrays
     const validFlights = flights && flights.length > 0 ? flights : [];
     const validTrains = trains && trains.length > 0 ? trains : [];
     const validBuses = buses && buses.length > 0 ? buses : [];
     const validHotels = hotels && hotels.length > 0 ? hotels : [];
     const validAttractions = attractions && attractions.length > 0 ? attractions : [];
-    
+
     // Calculate base costs with fallbacks
     const transportCosts = {
       budget: validBuses.length > 0 ? Math.min(...validBuses.map(b => b.price)) : 1500,
@@ -482,8 +482,8 @@ class TravelService {
       luxury: validFlights.length > 0 ? Math.min(...validFlights.map(f => f.price)) : 5000
     };
 
-    const accommodationCosts = validHotels.length > 0 ? 
-      validHotels.map(hotelGroup => 
+    const accommodationCosts = validHotels.length > 0 ?
+      validHotels.map(hotelGroup =>
         hotelGroup && hotelGroup.length > 0 ? Math.min(...hotelGroup.map(h => h.price)) : 2000
       ) : [2000];
 
@@ -576,7 +576,7 @@ class TravelService {
   calculatePricing(routeInfo, travelers, tripType) {
     const distanceKm = (routeInfo?.totalDistance || 1000) / 1000;
     const durationDays = Math.ceil((routeInfo?.totalDuration || 86400) / (24 * 60 * 60));
-    
+
     const basePricing = {
       budget: { transport: 15, accommodation: 800, food: 300, activities: 200 },
       comfort: { transport: 25, accommodation: 1500, food: 600, activities: 400 },
@@ -601,8 +601,8 @@ class TravelService {
         activities: Math.round(basePricing[type].activities * durationDays * travelers * multiplier),
         total: 0
       };
-      pricing[type].total = pricing[type].transport + pricing[type].accommodation + 
-                           pricing[type].food + pricing[type].activities;
+      pricing[type].total = pricing[type].transport + pricing[type].accommodation +
+        pricing[type].food + pricing[type].activities;
     });
 
     return pricing;
